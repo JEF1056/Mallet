@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Team {
+    id       String     @id @default(uuid())
+    members  Hacker[]
+    Location Location[]
+    Project  Project[]
+    Rating   Rating[]
+}
+
+model Hacker {
+    id                String @id @default(uuid())
+    name              String
+    profilePictureUrl String
+    team              Team   @relation(fields: [teamId], references: [id])
+    teamId            String
+}
+
+model Location {
+    id            String  @id @default(uuid())
+    number        Int
+    beingJudged   Boolean @default(false)
+    team          Team    @relation(fields: [assignedTeam], references: [id])
+    assignedTeam  String
+    judge         Judge   @relation(fields: [assignedJudge], references: [id])
+    assignedJudge String
+}
+
+model Project {
+    id          String @id @default(uuid())
+    name        String
+    description String
+    team        Team   @relation(fields: [teamId], references: [id])
+    teamId      String
+}
+
+model Judge {
+    id                   String     @id @default(uuid())
+    name                 String
+    profilePictureUrl    String
+    location             Location[]
+    endingTimeAtLocation DateTime
+    Rating               Rating[]
+}
+
+model Rating {
+    id             String   @id @default(uuid())
+    rating         Rating?  @relation("LastRating", fields: [lastRatingId], references: [id])
+    lastRatingId   String?
+    lastRating     Rating[] @relation("LastRating")
+    betterThanLast Boolean
+    judge          Judge    @relation(fields: [judgeId], references: [id])
+    judgeId        String
+    team           Team     @relation(fields: [teamId], references: [id])
+    teamId         String
+}

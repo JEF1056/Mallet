@@ -4,11 +4,36 @@ type Profile {
   profilePictureUrl: String
 }
 
+type Category {
+  name: String!
+  description: String
+  rankedTeams: [Team]
+}
+
+type Rating {
+  id: ID!
+  judge: Judge!
+  team: Team!
+  lastTeam: Team
+  betterThanLast: Boolean!
+}
+
+type Project {
+  name: String!
+  description: String
+  team: Team
+  url: String
+  bannerUrl: String
+  categories: [Category]!
+}
+
 type Judge {
   id: ID!
   profile: Profile!
   atLocation: Location
-  assignedLocations: [Location!]!
+  endingTimeAtLocation: Int
+  unjudgedLocations: [Location]!
+  judgedLocations: [Location]!
 }
 
 type Organizer {
@@ -23,25 +48,67 @@ type Hacker {
 }
 
 type Team {
-  name: String!
+  id: ID!
   members: [Hacker!]!
   atLocation: Location
+  project: Project
 }
 
 type Location {
   id: ID!
   number: Int!
+  beingJudged: Boolean!
   assignedTeam: Team
-  assignedJudges: [Judge!]!
+  assignedJudges: [Judge]!
 }
 
-# The "Query" type is special: it lists all of the available queries that
-# clients can execute, along with the return type for each. In this
-# case, the "books" query returns an array of zero or more Books (defined above).
+input ProfileInput {
+  name: String!
+  description: String
+  profilePictureUrl: String
+}
+
+input ProjectInput {
+  name: String!
+  description: String
+  team: ID!
+  url: String
+  bannerUrl: String
+  categoryIds: [ID!]!
+}
+
 type Query {
-  location: Location
+  hacker(id: [ID!]): [Hacker]
+  team(id: [ID!]): [Team]
+  location(id: [ID!]): [Location]
+  judge(id: [ID!]): [Judge]
 }
 
-type Subscription { 
-    numberIncremented: Int
+type Mutation {
+  createHacker(profile: ProfileInput!): Hacker
+
+  createProject(project: [ProjectInput!]!): [Project]
+
+  createCategory(name: String!, description: String): Category
+
+  createTeam(name: String!, members: [ID!]!, projectId: ID): Team
+  deleteTeam(id: ID!): ID
+  updateTeam(id: ID!, name: String, memberIds: [ID], projectId: ID): Team
+
+  createLocation(number: Int!): Location
+  assignJudgesToLocation(judgeId: [ID!]!, locationId: ID!): Location
+  unassignJudgesFromLocation(judgeId: [ID!]!, locationId: ID!): Location
+  assignTeamToLocation(teamId: ID!, locationId: ID!): Location
+  unassignTeamFromLocation(teamId: ID!, locationId: ID!): Location
+  judgeVisitingLocation(
+    judgeId: ID!
+    locationId: ID!
+    endingTimeAtLocation: Int
+  ): Location
+
+  createJudge(profile: ProfileInput!): Judge
+}
+
+type Subscription {
+  uptime: Int
 }

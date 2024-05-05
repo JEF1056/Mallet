@@ -1,14 +1,22 @@
 services:
   graphql:
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - DATABASE_URL=postgres://postgres:FYnHvLGqxxLWAkAWNexTcNuqUHDreRPq@db:5432/postgres
+      - REDIS_PORT=6379
+      - REDIS_HOST=cache
+      - REDIS_PASSWORD=4RydQWxu42bfDMkmR97BuN8nfB6rVy52
     build: ./graphql
     command: npm start
     container_name: graphql
-    restart: always
     ports:
       - "4000:4000"
     depends_on:
       - db
       - cache
+    volumes:
+      - ./graphql/src/__generated__:/usr/src/graphql/src/__generated__
     develop:
       watch:
         - action: sync+restart
@@ -18,8 +26,12 @@ services:
             - node_modules/
             - dist/
             - src/__generated__/
+            - .env
+            - prisma/
         - action: rebuild
-          path: package.json
+          path: ./graphql/package.json
+        - action: rebuild
+          path: ./graphql/prisma/migrations
   db:
     image: postgres:14.1-alpine
     container_name: postgres
@@ -27,6 +39,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=FYnHvLGqxxLWAkAWNexTcNuqUHDreRPq
+      - POSTGRES_DB=postgres
     ports:
       - "5432:5432"
     volumes:

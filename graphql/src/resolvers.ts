@@ -1,15 +1,13 @@
 import fs from "fs";
 import path from "path";
 import { mockLocation } from "./mocks";
-import { PubSub } from "graphql-subscriptions";
-
-const pubsub = new PubSub();
+import { pubsub } from "./redis";
 
 let currentNumber = 0;
 // In the background, increment a number every second and notify subscribers when it changes.
 function incrementNumber() {
   currentNumber++;
-  pubsub.publish("NUMBER_INCREMENTED", { numberIncremented: currentNumber });
+  pubsub.publish("NUMBER_INCREMENTED", { uptime: currentNumber });
   setTimeout(incrementNumber, 1000);
 }
 
@@ -23,14 +21,12 @@ export const typeDefs = `${fs.readFileSync(
   path.resolve("schema.graphql").toString()
 )}`;
 
-// Resolvers define how to fetch the types defined in your schema.
-// This resolver retrieves books from the "books" array above.
 export const resolvers = {
   Query: {
     location: () => mockLocation,
   },
   Subscription: {
-    numberIncremented: {
+    uptime: {
       subscribe: () => pubsub.asyncIterator(["NUMBER_INCREMENTED"]),
     },
   },

@@ -5,4 +5,5 @@ export const mockLocation: Location = {
   id: "ree",
   number: 1,
   assignedJudges: [],
+  beingJudged: false,
 };

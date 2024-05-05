@@ -8,6 +8,7 @@ import express from "express";
 import cors from "cors";
 import { expressMiddleware } from "@apollo/server/express4";
 import { typeDefs, resolvers } from "./resolvers";
+import { prisma } from "./db";
 
 export interface GlobalContext {
   // You can optionally create a TS interface to set up types
@@ -17,8 +18,6 @@ export interface GlobalContext {
 // Create the schema, which will be used separately by ApolloServer and
 // the WebSocket server.
 const schema = makeExecutableSchema({ typeDefs, resolvers });
-
-console.log("yeet pretty cool right");
 
 // Create an Express app and HTTP server; we will attach both the WebSocket
 // server and the ApolloServer to this HTTP server.
@@ -46,6 +45,7 @@ const server = new ApolloServer({
         return {
           async drainServer() {
             await serverCleanup.dispose();
+            await prisma.$disconnect()
           },
         };
       },
@@ -61,10 +61,13 @@ app.use(
   expressMiddleware(server)
 );
 
-const PORT = 4000;
 // Now that our HTTP server is fully set up, we can listen to it.
 // Now that our HTTP server is fully set up, actually listen.
-httpServer.listen(PORT, () => {
-  console.log(`\n🔨 Query endpoint ready at http://localhost:${PORT}/`);
-  console.log(`🔨 Subscription endpoint ready at ws://localhost:${PORT}/`);
+httpServer.listen(process.env.PORT, () => {
+  console.log(
+    `\n🔨 Query endpoint ready at http://localhost:${process.env.PORT}/`
+  );
+  console.log(
+    `🔨 Subscription endpoint ready at ws://localhost:${process.env.PORT}/`
+  );
 });

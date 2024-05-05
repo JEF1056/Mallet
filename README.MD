@@ -5,6 +5,17 @@ A realtime, modern, and transparent hackathon juding and logistics software, des
 We reccomend using Docker and docker-compose
 
 ### Development
+Start by installing dependencies
+```
+cd graphql
+npm install
+```
+Start by raising just the db and running prisma migrate:
+```
+docker-compose up --build db -d
+npm run migrate
+```
+
 Use the following command to watch for live changes:
 ```
 docker-compose up --build --watch
