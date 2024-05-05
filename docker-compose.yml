@@ -1,0 +1,48 @@
+services:
+  graphql:
+    build: ./graphql
+    command: npm start
+    container_name: graphql
+    restart: always
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+      - cache
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./graphql
+          target: /usr/src/graphql
+          ignore:
+            - node_modules/
+            - dist/
+            - src/__generated__/
+        - action: rebuild
+          path: package.json
+  db:
+    image: postgres:14.1-alpine
+    container_name: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=FYnHvLGqxxLWAkAWNexTcNuqUHDreRPq
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+  cache:
+    image: redis:6.2-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass 4RydQWxu42bfDMkmR97BuN8nfB6rVy52
+    volumes:
+      - cache:/data
+
+volumes:
+  db:
+    driver: local
+  cache:
+    driver: local

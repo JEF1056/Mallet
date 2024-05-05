@@ -1,0 +1,47 @@
+type Profile {
+  name: String!
+  description: String
+  profilePictureUrl: String
+}
+
+type Judge {
+  id: ID!
+  profile: Profile!
+  atLocation: Location
+  assignedLocations: [Location!]!
+}
+
+type Organizer {
+  id: ID!
+  profile: Profile!
+}
+
+type Hacker {
+  id: ID!
+  profile: Profile!
+  atLocation: Location
+}
+
+type Team {
+  name: String!
+  members: [Hacker!]!
+  atLocation: Location
+}
+
+type Location {
+  id: ID!
+  number: Int!
+  assignedTeam: Team
+  assignedJudges: [Judge!]!
+}
+
+# The "Query" type is special: it lists all of the available queries that
+# clients can execute, along with the return type for each. In this
+# case, the "books" query returns an array of zero or more Books (defined above).
+type Query {
+  location: Location
+}
+
+type Subscription { 
+    numberIncremented: Int
+}
