@@ -60,6 +60,7 @@ type Location {
   beingJudged: Boolean!
   assignedTeam: Team
   assignedJudges: [Judge]!
+  noShow: Boolean!
 }
 
 input ProfileInput {
@@ -95,7 +96,7 @@ type Mutation {
   deleteTeam(id: ID!): ID
   updateTeam(id: ID!, name: String, memberIds: [ID], projectId: ID): Team
 
-  createLocation(number: Int!): Location
+  createLocation(number: Int): Location
   assignJudgesToLocation(judgeId: [ID!]!, locationId: ID!): Location
   unassignJudgesFromLocation(judgeId: [ID!]!, locationId: ID!): Location
   assignTeamToLocation(teamId: ID!, locationId: ID!): Location

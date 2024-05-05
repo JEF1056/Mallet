@@ -2,6 +2,12 @@ import fs from "fs";
 import path from "path";
 import { mockLocation } from "./mocks";
 import { pubsub } from "./redis";
+import { createJudge, resolveJudge } from "./linkages/judge";
+import {
+  assignJudgesToLocation,
+  createLocation,
+  resolveLocation,
+} from "./linkages/location";
 
 let currentNumber = 0;
 // In the background, increment a number every second and notify subscribers when it changes.
@@ -23,7 +29,13 @@ export const typeDefs = `${fs.readFileSync(
 
 export const resolvers = {
   Query: {
-    location: () => mockLocation,
+    judge: resolveJudge,
+    location: resolveLocation,
+  },
+  Mutation: {
+    createJudge: createJudge,
+    createLocation: createLocation,
+    assignJudgesToLocation: assignJudgesToLocation,
   },
   Subscription: {
     uptime: {

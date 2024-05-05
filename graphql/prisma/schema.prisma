@@ -22,21 +22,21 @@ model Team {
 }
 
 model Hacker {
-    id                String @id @default(uuid())
+    id                String  @id @default(uuid())
     name              String
-    profilePictureUrl String
-    team              Team   @relation(fields: [teamId], references: [id])
+    profilePictureUrl String?
+    team              Team    @relation(fields: [teamId], references: [id])
     teamId            String
 }
 
 model Location {
-    id            String  @id @default(uuid())
-    number        Int
-    beingJudged   Boolean @default(false)
-    team          Team    @relation(fields: [assignedTeam], references: [id])
-    assignedTeam  String
-    judge         Judge   @relation(fields: [assignedJudge], references: [id])
-    assignedJudge String
+    id             String           @id @default(uuid())
+    number         Int              @unique
+    beingJudged    Boolean          @default(false)
+    team           Team?            @relation(fields: [assignedTeam], references: [id])
+    assignedTeam   String?
+    noShow         Boolean          @default(false)
+    assignedJudges JudgeLocations[]
 }
 
 model Project {
@@ -48,12 +48,22 @@ model Project {
 }
 
 model Judge {
-    id                   String     @id @default(uuid())
+    id                   String           @id @default(uuid())
     name                 String
-    profilePictureUrl    String
-    location             Location[]
-    endingTimeAtLocation DateTime
+    description          String?
+    profilePictureUrl    String?
+    endingTimeAtLocation DateTime?
     Rating               Rating[]
+    assignedLocations    JudgeLocations[]
+}
+
+model JudgeLocations {
+    judge      Judge    @relation(fields: [judgeId], references: [id])
+    judgeId    String
+    location   Location @relation(fields: [locationId], references: [id])
+    locationId String
+
+    @@id([judgeId, locationId])
 }
 
 model Rating {
