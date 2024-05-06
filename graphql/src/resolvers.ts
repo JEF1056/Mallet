@@ -4,13 +4,19 @@ import { pubsub } from "./redis";
 import { createJudge, resolveJudge } from "./linkages/judge";
 import {
   assignJudgesToLocation,
-  assignTeamToLocation,
   createLocation,
   resolveLocation,
+  setLocationProject,
   unassignJudgesFromLocation,
-  unassignTeamFromLocation,
 } from "./linkages/location";
 import { withFilter } from "graphql-subscriptions";
+import {
+  clearProjects,
+  createProjects,
+  resolveProject,
+} from "./linkages/project";
+import { createCategory, resolveCategory } from "./linkages/category";
+import { resolveRating, setRating } from "./linkages/rating";
 
 let currentNumber = 0;
 // In the background, increment a number every second and notify subscribers when it changes.
@@ -34,14 +40,22 @@ export const resolvers = {
   Query: {
     judge: resolveJudge,
     location: resolveLocation,
+    category: resolveCategory,
+    project: resolveProject,
+    rating: resolveRating,
   },
   Mutation: {
+    createProjects: createProjects,
     createJudge: createJudge,
     createLocation: createLocation,
+    createCategory: createCategory,
+    setRating: setRating,
+
     assignJudgesToLocation: assignJudgesToLocation,
     unassignJudgesFromLocation: unassignJudgesFromLocation,
-    assignTeamToLocation: assignTeamToLocation,
-    unassignTeamFromLocation: unassignTeamFromLocation,
+    setLocationProject: setLocationProject,
+
+    clearProjects: clearProjects,
   },
   Subscription: {
     uptime: {

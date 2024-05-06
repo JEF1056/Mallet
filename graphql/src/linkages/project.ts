@@ -2,55 +2,117 @@ import { ID } from "graphql-ws";
 import { prisma } from "../db";
 import {
   Project,
-  MutationCreateProjectArgs,
+  MutationCreateProjectsArgs,
 } from "../__generated__/resolvers-types";
+import { v4 as uuidv4 } from "uuid";
+import { resolveCategory } from "./category";
 
 export async function resolveProject(
   parent,
-  args: { id: ID[] },
+  args: { ids: ID[] },
   context,
   info
 ): Promise<Project[]> {
   const projectInformationFromDB = await prisma.project.findMany({
-    where: args.id
+    where: args.ids
       ? {
-          id: { in: args.id },
+          id: { in: args.ids },
         }
       : undefined,
   });
 
+  const projectCategoriesFromDB = await prisma.projectCategory.findMany({
+    where: {
+      projectId: {
+        in: projectInformationFromDB.map((project) => project.id),
+      },
+    },
+  });
+
+  const resolvedCategories = await resolveCategory(
+    null,
+    {
+      ids: projectCategoriesFromDB.map(
+        (projectCategory) => projectCategory.categoryId
+      ),
+    },
+    null,
+    null
+  );
+
+  const projectIdToCategory = projectCategoriesFromDB.reduce(
+    (obj, { projectId, categoryId }) => {
+      const categoryInfo = resolvedCategories.find(
+        (category) => category.id === categoryId
+      );
+      if (categoryInfo) {
+        if (!obj[projectId]) {
+          obj[projectId] = [];
+        }
+        obj[projectId].push(categoryInfo);
+      }
+      return obj;
+    },
+    {}
+  );
+
   const projects: Project[] = projectInformationFromDB.map((project) => ({
     id: project.id,
-    endingTimeAtLocation: project.endingTimeAtLocation?.getSeconds(),
-    projectdLocations: [],
-    unprojectdLocations: [],
+    categories: projectIdToCategory[project.id] || [],
+    description: project.description,
+    name: project.name,
+    url: project.url,
   }));
 
   return projects;
 }
 
-export async function createProject(
+export async function createProjects(
   _,
-  args: MutationCreateProjectArgs
-): Promise<Project> {
-  console.info("Creating project with args: ", args);
+  args: MutationCreateProjectsArgs
+): Promise<Project[]> {
+  console.info(`Creating ${args.projects.length} projects`);
+  let projectIds: string[] = [];
 
-  const project = await prisma.project.create({
-    data: {
-      name: args.profile.name,
-      description: args.profile.description,
-      profilePictureUrl: args.profile.profilePictureUrl,
-    },
-  });
+  for (const project of args.projects) {
+    const projectId: string = uuidv4();
+    await prisma.$transaction([
+      prisma.project.create({
+        data: {
+          id: projectId,
+          name: project.name,
+          description: project.description,
+          url: project.url,
+        },
+      }),
+      prisma.projectCategory.createMany({
+        data: project.categoryIds.map((categoryId) => ({
+          projectId: projectId,
+          categoryId,
+        })),
+      }),
+    ]);
 
-  return {
-    id: project.id,
-    profile: {
-      name: project.name,
-      profilePictureUrl: project.profilePictureUrl,
-    },
-    endingTimeAtLocation: project.endingTimeAtLocation?.getSeconds(),
-    projectdLocations: [],
-    unprojectdLocations: [],
-  };
+    projectIds.push(projectId);
+  }
+
+  console.info(`Created projects with ids: ${projectIds}`);
+
+  const resolvedProjects = await resolveProject(
+    null,
+    { ids: projectIds },
+    null,
+    null
+  );
+
+  return resolvedProjects;
+}
+
+export async function clearProjects() {
+  console.info("Clearing all projects");
+  await prisma.projectCategory.deleteMany({});
+  const deleteCount = (await prisma.project.deleteMany({})).count;
+  console.info(`Deleted ${deleteCount} projects`);
+
+  return deleteCount;
 }

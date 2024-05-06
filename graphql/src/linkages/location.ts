@@ -5,6 +5,7 @@ import {
   Location,
   MutationAssignJudgesToLocationArgs,
   MutationCreateLocationArgs,
+  MutationSetLocationProjectArgs,
 } from "../__generated__/resolvers-types";
 import { resolveJudge } from "./judge";
 import { FindFirstNonContinouous } from "../helpers";
@@ -14,21 +15,21 @@ import { pubsub } from "../redis";
 
 export async function resolveLocation(
   parent,
-  args: { id: ID[] },
+  args: { ids: ID[] },
   context,
   info
 ): Promise<Location[]> {
   console.info("Resolving location with args: ", args);
 
   const locationInformationFromDB = await prisma.location.findMany({
-    where: args.id
+    where: args.ids
       ? {
-          id: { in: args.id },
+          id: { in: args.ids },
         }
       : undefined,
   });
 
-  const assignedJudgesFromDB = await prisma.judgeLocations.findMany({
+  const assignedJudgesFromDB = await prisma.judgeRelationships.findMany({
     where: {
       locationId: {
         in: locationInformationFromDB.map((location) => location.id),
@@ -39,7 +40,7 @@ export async function resolveLocation(
   const assignedJudges: Judge[] = await resolveJudge(
     parent,
     {
-      id: assignedJudgesFromDB.map((judge) => judge.judgeId),
+      ids: assignedJudgesFromDB.map((judge) => judge.judgeId),
     },
     context,
     info
@@ -96,7 +97,7 @@ export async function createLocation(
     },
   });
 
-  const assignedJudgesFromDB = await prisma.judgeLocations.findMany({
+  const assignedJudgesFromDB = await prisma.judgeRelationships.findMany({
     where: {
       locationId: location.id,
     },
@@ -105,7 +106,7 @@ export async function createLocation(
   const assignedJudges: Judge[] = await resolveJudge(
     null,
     {
-      id: assignedJudgesFromDB.map((judge) => judge.judgeId),
+      ids: assignedJudgesFromDB.map((judge) => judge.judgeId),
     },
     null,
     null
@@ -116,7 +117,6 @@ export async function createLocation(
     number: location.number,
     beingJudged: location.beingJudged,
     assignedJudges: assignedJudges,
-    assignedTeam: null,
     noShow: location.noShow,
   };
 }
@@ -131,8 +131,8 @@ export async function assignJudgesToLocation(
   try {
     if (
       (
-        await prisma.judgeLocations.createMany({
-          data: args.judgeId.map((judgeId) => ({
+        await prisma.judgeRelationships.createMany({
+          data: args.judgeIds.map((judgeId) => ({
             judgeId: judgeId,
             locationId: args.locationId,
           })),
@@ -158,7 +158,7 @@ export async function assignJudgesToLocation(
   }
 
   const location = (
-    await resolveLocation(null, { id: [args.locationId] }, null, null)
+    await resolveLocation(null, { ids: [args.locationId] }, null, null)
   )[0];
 
   if (publishEvent) {
@@ -178,10 +178,10 @@ export async function unassignJudgesFromLocation(
   try {
     if (
       (
-        await prisma.judgeLocations.deleteMany({
+        await prisma.judgeRelationships.deleteMany({
           where: {
             judgeId: {
-              in: args.judgeId,
+              in: args.judgeIds,
             },
             locationId: args.locationId,
           },
@@ -206,12 +206,58 @@ export async function unassignJudgesFromLocation(
   }
 
   const location = (
-    await resolveLocation(null, { id: [args.locationId] }, null, null)
+    await resolveLocation(null, { ids: [args.locationId] }, null, null)
   )[0];
 
   if (publishEvent) {
     pubsub.publish("LOCATION_JUDGES_CHANGED", { location: location });
   }
+
+  return location;
+}
+
+export async function setLocationProject(
+  _,
+  args: MutationSetLocationProjectArgs
+): Promise<Location> {
+  console.info("Setting project to location with args: ", args);
+
+  try {
+    await prisma.projectLocation.upsert({
+      where: {
+        projectId_locationId: {
+          locationId: args.locationId,
+          projectId: args.projectId,
+        },
+      },
+      update: {
+        projectId: args.projectId,
+      },
+      create: {
+        projectId: args.projectId,
+        locationId: args.locationId,
+      },
+    });
+  } catch (e) {
+    // A common error that happens here is a bad user input causes foreign key violation
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2003"
+    ) {
+      throw new GraphQLError(
+        `Error setting project to location: ${e.message}`,
+        {
+          extensions: { code: "400" },
+        }
+      );
+    }
+  }
+
+  const location = (
+    await resolveLocation(null, { ids: [args.locationId] }, null, null)
+  )[0];
+
+  pubsub.publish("LOCATION_PROJECT_CHANGED", { location: location });
 
   return location;
 }

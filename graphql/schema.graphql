@@ -15,15 +15,16 @@ type Rating {
   id: ID!
   judge: Judge!
   project: Project!
-  lastProject: Project
+  lastRating: Rating
   betterThanLast: Boolean!
 }
 
 type Project {
+  id: ID!
   name: String!
   description: String
   url: String
-  categories: [Category]!
+  categories: [Category!]!
 }
 
 type Judge {
@@ -59,29 +60,41 @@ input ProjectInput {
   name: String!
   description: String
   url: String
-  bannerUrl: String
   categoryIds: [ID!]!
 }
 
 type Query {
-  location(id: [ID!]): [Location]
-  judge(id: [ID!]): [Judge]
+  location(ids: [ID!]): [Location]
+  judge(ids: [ID!]): [Judge]
+  project(ids: [ID!]): [Project]
+  category(ids: [ID!]): [Category]
+  rating(ids: [ID!]): [Rating]
 }
 
 type Mutation {
-  createProject(project: [ProjectInput!]!): [Project]
+  createProjects(projects: [ProjectInput!]!): [Project]
+  clearProjects: Int
 
   createCategory(name: String!, description: String): Category
 
+  # Note: if lastRatingId is not provided, but the judge has judged before, we will retreive the last project from the database.
+  # This is slower, and when possible, you should provide the lastRatingId.
+  setRating(
+    judgeId: ID!
+    projectId: ID!
+    categoryId: ID!
+    betterThanLast: Boolean!
+  ): Rating
+
   createLocation(number: Int): Location
-  assignJudgesToLocation(judgeId: [ID!]!, locationId: ID!): Location
-  unassignJudgesFromLocation(judgeId: [ID!]!, locationId: ID!): Location
+  assignJudgesToLocation(judgeIds: [ID!]!, locationId: ID!): Location
+  unassignJudgesFromLocation(judgeIds: [ID!]!, locationId: ID!): Location
   judgeVisitingLocation(
     judgeId: ID!
     locationId: ID!
     endingTimeAtLocation: Int
   ): Location
-  setLocationProject(projectId: ID!): Location
+  setLocationProject(projectId: ID!, locationId: ID!): Location
 
   createJudge(profile: ProfileInput!): Judge
 }

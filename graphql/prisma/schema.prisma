@@ -80,14 +80,10 @@ model ProjectCategory {
 
 model Rating {
     id             String   @id @default(uuid())
-    lastRatingId   String? // Nullable as it refers to another Rating's id
     betterThanLast Boolean
-    previousRating Rating?  @relation("PreviousRating", fields: [lastRatingId], references: [id])
-    relatedRatings Rating[] @relation("PreviousRating") // Reverse relation to fetch all related ratings
+    lastUpdated    DateTime @updatedAt
 
     RatingRelationships RatingRelationships[]
-
-    @@unique([id, lastRatingId])
 }
 
 model RatingRelationships {

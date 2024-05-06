@@ -7,14 +7,14 @@ import {
 
 export async function resolveJudge(
   parent,
-  args: { id: ID[] },
+  args: { ids: ID[] },
   context,
   info
 ): Promise<Judge[]> {
   const judgeInformationFromDB = await prisma.judge.findMany({
-    where: args.id
+    where: args.ids
       ? {
-          id: { in: args.id },
+          id: { in: args.ids },
         }
       : undefined,
   });
