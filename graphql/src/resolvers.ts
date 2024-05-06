@@ -1,13 +1,16 @@
 import fs from "fs";
 import path from "path";
-import { mockLocation } from "./mocks";
 import { pubsub } from "./redis";
 import { createJudge, resolveJudge } from "./linkages/judge";
 import {
   assignJudgesToLocation,
+  assignTeamToLocation,
   createLocation,
   resolveLocation,
+  unassignJudgesFromLocation,
+  unassignTeamFromLocation,
 } from "./linkages/location";
+import { withFilter } from "graphql-subscriptions";
 
 let currentNumber = 0;
 // In the background, increment a number every second and notify subscribers when it changes.
@@ -36,10 +39,23 @@ export const resolvers = {
     createJudge: createJudge,
     createLocation: createLocation,
     assignJudgesToLocation: assignJudgesToLocation,
+    unassignJudgesFromLocation: unassignJudgesFromLocation,
+    assignTeamToLocation: assignTeamToLocation,
+    unassignTeamFromLocation: unassignTeamFromLocation,
   },
   Subscription: {
     uptime: {
       subscribe: () => pubsub.asyncIterator(["NUMBER_INCREMENTED"]),
+    },
+    location: {
+      subscribe: withFilter(
+        () =>
+          pubsub.asyncIterator([
+            "LOCATION_JUDGES_CHANGED",
+            "LOCATION_PROJECT_CHANGED",
+          ]),
+        (payload, variables) => payload.location.id == variables.id
+      ),
     },
   },
 };

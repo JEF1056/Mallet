@@ -10,6 +10,7 @@ import { resolveJudge } from "./judge";
 import { FindFirstNonContinouous } from "../helpers";
 import { Prisma } from "@prisma/client";
 import { GraphQLError } from "graphql";
+import { pubsub } from "../redis";
 
 export async function resolveLocation(
   parent,
@@ -126,14 +127,21 @@ export async function assignJudgesToLocation(
 ): Promise<Location> {
   console.info("Assigning judges to location with args: ", args);
 
+  let publishEvent: boolean = false;
   try {
-    await prisma.judgeLocations.createMany({
-      data: args.judgeId.map((judgeId) => ({
-        judgeId: judgeId,
-        locationId: args.locationId,
-      })),
-      skipDuplicates: true,
-    });
+    if (
+      (
+        await prisma.judgeLocations.createMany({
+          data: args.judgeId.map((judgeId) => ({
+            judgeId: judgeId,
+            locationId: args.locationId,
+          })),
+          skipDuplicates: true,
+        })
+      ).count > 0
+    ) {
+      publishEvent = true;
+    }
   } catch (e) {
     // A common error that happens here is a bad user input causes foreign key violation
     if (
@@ -152,6 +160,58 @@ export async function assignJudgesToLocation(
   const location = (
     await resolveLocation(null, { id: [args.locationId] }, null, null)
   )[0];
+
+  if (publishEvent) {
+    pubsub.publish("LOCATION_JUDGES_CHANGED", { location: location });
+  }
+
+  return location;
+}
+
+export async function unassignJudgesFromLocation(
+  _,
+  args: MutationAssignJudgesToLocationArgs
+): Promise<Location> {
+  console.info("Unassigning judges from location with args: ", args);
+
+  let publishEvent: boolean = false;
+  try {
+    if (
+      (
+        await prisma.judgeLocations.deleteMany({
+          where: {
+            judgeId: {
+              in: args.judgeId,
+            },
+            locationId: args.locationId,
+          },
+        })
+      ).count > 0
+    ) {
+      publishEvent = true;
+    }
+  } catch (e) {
+    // A common error that happens here is a bad user input causes foreign key violation
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2003"
+    ) {
+      throw new GraphQLError(
+        `Error unassigning judges from location: ${e.message}`,
+        {
+          extensions: { code: "400" },
+        }
+      );
+    }
+  }
+
+  const location = (
+    await resolveLocation(null, { id: [args.locationId] }, null, null)
+  )[0];
+
+  if (publishEvent) {
+    pubsub.publish("LOCATION_JUDGES_CHANGED", { location: location });
+  }
 
   return location;
 }

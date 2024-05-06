@@ -5,25 +5,24 @@ type Profile {
 }
 
 type Category {
+  id: ID!
   name: String!
   description: String
-  rankedTeams: [Team]
+  rankedProjects: [Project]!
 }
 
 type Rating {
   id: ID!
   judge: Judge!
-  team: Team!
-  lastTeam: Team
+  project: Project!
+  lastProject: Project
   betterThanLast: Boolean!
 }
 
 type Project {
   name: String!
   description: String
-  team: Team
   url: String
-  bannerUrl: String
   categories: [Category]!
 }
 
@@ -41,24 +40,11 @@ type Organizer {
   profile: Profile!
 }
 
-type Hacker {
-  id: ID!
-  profile: Profile!
-  atLocation: Location
-}
-
-type Team {
-  id: ID!
-  members: [Hacker!]!
-  atLocation: Location
-  project: Project
-}
-
 type Location {
   id: ID!
   number: Int!
   beingJudged: Boolean!
-  assignedTeam: Team
+  assignedProject: Project
   assignedJudges: [Judge]!
   noShow: Boolean!
 }
@@ -72,44 +58,35 @@ input ProfileInput {
 input ProjectInput {
   name: String!
   description: String
-  team: ID!
   url: String
   bannerUrl: String
   categoryIds: [ID!]!
 }
 
 type Query {
-  hacker(id: [ID!]): [Hacker]
-  team(id: [ID!]): [Team]
   location(id: [ID!]): [Location]
   judge(id: [ID!]): [Judge]
 }
 
 type Mutation {
-  createHacker(profile: ProfileInput!): Hacker
-
   createProject(project: [ProjectInput!]!): [Project]
 
   createCategory(name: String!, description: String): Category
 
-  createTeam(name: String!, members: [ID!]!, projectId: ID): Team
-  deleteTeam(id: ID!): ID
-  updateTeam(id: ID!, name: String, memberIds: [ID], projectId: ID): Team
-
   createLocation(number: Int): Location
   assignJudgesToLocation(judgeId: [ID!]!, locationId: ID!): Location
   unassignJudgesFromLocation(judgeId: [ID!]!, locationId: ID!): Location
-  assignTeamToLocation(teamId: ID!, locationId: ID!): Location
-  unassignTeamFromLocation(teamId: ID!, locationId: ID!): Location
   judgeVisitingLocation(
     judgeId: ID!
     locationId: ID!
     endingTimeAtLocation: Int
   ): Location
+  setLocationProject(projectId: ID!): Location
 
   createJudge(profile: ProfileInput!): Judge
 }
 
 type Subscription {
   uptime: Int
+  location(id: ID!): Location
 }

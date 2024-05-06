@@ -13,51 +13,45 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Team {
-    id       String     @id @default(uuid())
-    members  Hacker[]
-    Location Location[]
-    Project  Project[]
-    Rating   Rating[]
-}
-
-model Hacker {
-    id                String  @id @default(uuid())
-    name              String
-    profilePictureUrl String?
-    team              Team    @relation(fields: [teamId], references: [id])
-    teamId            String
-}
-
-model Location {
-    id             String           @id @default(uuid())
-    number         Int              @unique
-    beingJudged    Boolean          @default(false)
-    team           Team?            @relation(fields: [assignedTeam], references: [id])
-    assignedTeam   String?
-    noShow         Boolean          @default(false)
-    assignedJudges JudgeLocations[]
+model Category {
+    id                  String                @id @default(uuid())
+    name                String
+    description         String?
+    ProjectCategory     ProjectCategory[]
+    RatingRelationships RatingRelationships[]
 }
 
 model Project {
-    id          String @id @default(uuid())
-    name        String
-    description String
-    team        Team   @relation(fields: [teamId], references: [id])
-    teamId      String
+    id                  String                @id @default(uuid())
+    name                String
+    description         String?
+    url                 String
+    RatingRelationships RatingRelationships[]
+    ProjectLocation     ProjectLocation[]
+    ProjectCategory     ProjectCategory[]
+}
+
+model Location {
+    id                 String               @id @default(uuid())
+    number             Int                  @unique
+    beingJudged        Boolean              @default(false)
+    noShow             Boolean              @default(false)
+    JudgeRelationships JudgeRelationships[]
+    ProjectLocation    ProjectLocation[]
 }
 
 model Judge {
-    id                   String           @id @default(uuid())
+    id                   String                @id @default(uuid())
     name                 String
     description          String?
     profilePictureUrl    String?
     endingTimeAtLocation DateTime?
-    Rating               Rating[]
-    assignedLocations    JudgeLocations[]
+    JudgeRelationships   JudgeRelationships[]
+    RatingRelationships  RatingRelationships[]
 }
 
-model JudgeLocations {
+// Below are relationship tables, which help us match up values when needed.
+model JudgeRelationships {
     judge      Judge    @relation(fields: [judgeId], references: [id])
     judgeId    String
     location   Location @relation(fields: [locationId], references: [id])
@@ -66,14 +60,45 @@ model JudgeLocations {
     @@id([judgeId, locationId])
 }
 
+model ProjectLocation {
+    project    Project  @relation(fields: [projectId], references: [id])
+    projectId  String
+    location   Location @relation(fields: [locationId], references: [id])
+    locationId String
+
+    @@id([projectId, locationId])
+}
+
+model ProjectCategory {
+    project    Project  @relation(fields: [projectId], references: [id])
+    projectId  String
+    category   Category @relation(fields: [categoryId], references: [id])
+    categoryId String
+
+    @@id([projectId, categoryId])
+}
+
 model Rating {
     id             String   @id @default(uuid())
-    rating         Rating?  @relation("LastRating", fields: [lastRatingId], references: [id])
-    lastRatingId   String?
-    lastRating     Rating[] @relation("LastRating")
+    lastRatingId   String? // Nullable as it refers to another Rating's id
     betterThanLast Boolean
-    judge          Judge    @relation(fields: [judgeId], references: [id])
-    judgeId        String
-    team           Team     @relation(fields: [teamId], references: [id])
-    teamId         String
+    previousRating Rating?  @relation("PreviousRating", fields: [lastRatingId], references: [id])
+    relatedRatings Rating[] @relation("PreviousRating") // Reverse relation to fetch all related ratings
+
+    RatingRelationships RatingRelationships[]
+
+    @@unique([id, lastRatingId])
+}
+
+model RatingRelationships {
+    rating     Rating   @relation(fields: [ratingId], references: [id])
+    ratingId   String
+    project    Project  @relation(fields: [projectId], references: [id])
+    projectId  String
+    judge      Judge    @relation(fields: [judgeId], references: [id])
+    judgeId    String
+    category   Category @relation(fields: [categoryId], references: [id])
+    categoryId String
+
+    @@id([ratingId, projectId, judgeId, categoryId])
 }
