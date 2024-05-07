@@ -3,11 +3,15 @@ import { prisma } from "../db";
 import {
   Rating,
   MutationSetRatingArgs,
+  Project,
+  Judge,
 } from "../__generated__/resolvers-types";
 import { resolveJudge } from "./judge";
 import { resolveProject } from "./project";
 import { v4 as uuidv4 } from "uuid";
 import { resolveCategory } from "./category";
+import { GraphQLError } from "graphql";
+import { batchResolveAndMap } from "./helpers";
 
 export async function resolveRating(
   parent,
@@ -34,16 +38,42 @@ export async function resolveRating(
     },
   });
 
-  console.info("Rating information from DB: ", ratingInformationFromDB);
+  // resolvedProjects includes items from RatingRelationships, BetterRating, and WorseRating. Map by ID.
+  const resolvedProjects: { [key: ID]: Project } = await batchResolveAndMap(
+    resolveProject,
+    ratingInformationFromDB
+      .flatMap((rating) => [
+        rating.RatingRelationships[0].projectId,
+        rating.BetterRating[0]?.betterProjectId,
+        rating.WorseRating[0]?.worseProjectId,
+      ])
+      .filter((value) => value)
+  );
 
-  //   const ratings: Rating[] = ratingInformationFromDB.map((rating) => ({
-  //     id: rating.id,
-  //     judge: ratingIdToJudge[rating.id],
-  //     project: ratingIdToProject[rating.id],
-  //     category: ratingIdToCategory[rating.id],
-  //   }));
+  const resolvedJudges: { [key: ID]: Judge } = await batchResolveAndMap(
+    resolveJudge,
+    ratingInformationFromDB.map(
+      (rating) => rating.RatingRelationships[0].judgeId
+    )
+  );
 
-  return [];
+  const resolvedCategories = await batchResolveAndMap(
+    resolveCategory,
+    ratingInformationFromDB.map(
+      (rating) => rating.RatingRelationships[0].categoryId
+    )
+  );
+
+  const ratings: Rating[] = ratingInformationFromDB.map((rating) => ({
+    id: rating.id,
+    judge: resolvedJudges[rating.RatingRelationships[0].judgeId],
+    project: resolvedProjects[rating.RatingRelationships[0].projectId],
+    category: resolvedCategories[rating.RatingRelationships[0].categoryId],
+    betterProject: resolvedProjects[rating.BetterRating[0]?.betterProjectId],
+    worseProject: resolvedProjects[rating.WorseRating[0]?.worseProjectId],
+  }));
+
+  return ratings;
 }
 
 export async function setRating(
@@ -112,7 +142,6 @@ export async function setRating(
         RatingRelationships: {
           some: {
             categoryId: args.categoryId,
-            projectId: args.projectId,
             judgeId: args.judgeId,
           },
         },
@@ -127,8 +156,18 @@ export async function setRating(
 
     // If there is a latest rating, compare the two and create a better/worse relationship
     // If there isn't one, don't do anything
-    // Use upsert, in case the user is
+    // Use upsert so this function basically won't ever error
     if (latestRating) {
+      if (
+        args.currentProjectIsBetter == null ||
+        args.currentProjectIsBetter == undefined
+      ) {
+        throw new GraphQLError(
+          "currentProjectIsBetter must be provided if a previous rating exists",
+          { extensions: { code: "400" } }
+        );
+      }
+
       let betterProjectId: string = null;
       let worseProjectId: string = null;
 
@@ -143,13 +182,13 @@ export async function setRating(
       await prisma.$transaction([
         prisma.betterRating.upsert({
           where: {
-            ratingId: latestRating.id,
+            ratingId: ratingId,
           },
           update: {
             betterProjectId: betterProjectId,
           },
           create: {
-            ratingId: latestRating.id,
+            ratingId: ratingId,
             betterProjectId: betterProjectId,
           },
         }),

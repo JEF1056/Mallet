@@ -13,8 +13,9 @@ type Category {
 type Rating {
   id: ID!
   judge: Judge!
-  betterProject: Project!
-  worseProject: Project!
+  project: Project!
+  betterProject: Project
+  worseProject: Project
   category: Category!
 }
 
@@ -88,7 +89,7 @@ type Mutation {
     judgeId: ID!
     projectId: ID!
     categoryId: ID!
-    currentProjectIsBetter: Boolean!
+    currentProjectIsBetter: Boolean
   ): Rating
 
   createLocation(number: Int): Location

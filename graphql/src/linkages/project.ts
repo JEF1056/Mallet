@@ -7,7 +7,7 @@ import {
 } from "../__generated__/resolvers-types";
 import { v4 as uuidv4 } from "uuid";
 import { resolveCategory } from "./category";
-import { resolveRating } from "./rating";
+import { batchResolveAndMap } from "./helpers";
 
 export async function resolveProject(
   parent,
@@ -138,21 +138,28 @@ export async function resolveProjectRankingsForCategory(
   });
 
   const rankedProjects = rankProjects(
-    ratingRelationshipsFromDB.map((rating) => ({
-      better: rating.BetterRating[0].betterProjectId,
-      worse: rating.WorseRating[0].worseProjectId,
-    }))
+    ratingRelationshipsFromDB
+      .map((rating) => ({
+        better: rating.BetterRating[0]?.betterProjectId,
+        worse: rating.WorseRating[0]?.worseProjectId,
+      }))
+      .filter((project) => project.better && project.worse)
   );
 
-  console.log(JSON.stringify(ratingRelationshipsFromDB, null, 2));
-  console.log(rankedProjects);
+  const resolvedProjects: { [key: ID]: Project } = await batchResolveAndMap(
+    resolveProject,
+    rankedProjects.map((project) => project.projectId)
+  );
 
-  return [];
+  return rankedProjects.map((project) => ({
+    project: resolvedProjects[project.projectId],
+    score: project.score,
+  }));
 }
 
 function rankProjects(
   projects: Array<{ better: string; worse: string }>
-): string[] {
+): { projectId: ID; score: number }[] {
   const projectRank: { [key: string]: number } = {};
 
   // Iterate through each project to update rankings
@@ -163,10 +170,15 @@ function rankProjects(
     projectRank[project.worse] = (projectRank[project.worse] || 0) - 1;
   });
 
-  // Convert the projectRank dictionary into an array of projects sorted by ranking
-  const sortedProjects = Object.keys(projectRank).sort(
-    (a, b) => projectRank[b] - projectRank[a]
-  );
+  // Sort object by ranking
+  const sortedProjects: { projectId: ID; score: number }[] = Object.entries(
+    projectRank
+  )
+    .map(([projectId, score]) => ({
+      projectId,
+      score,
+    }))
+    .sort((a, b) => b.score - a.score);
 
   return sortedProjects;
 }
