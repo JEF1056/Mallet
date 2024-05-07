@@ -17,6 +17,7 @@ services:
       - cache
     volumes:
       - ./graphql/src/__generated__:/usr/src/graphql/src/__generated__
+      - ./graphql/dist:/usr/src/graphql/dist
     develop:
       watch:
         - action: sync+restart

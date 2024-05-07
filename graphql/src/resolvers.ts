@@ -14,6 +14,7 @@ import {
   clearProjects,
   createProjects,
   resolveProject,
+  resolveProjectRankingsForCategory,
 } from "./linkages/project";
 import { createCategory, resolveCategory } from "./linkages/category";
 import { resolveRating, setRating } from "./linkages/rating";
@@ -43,6 +44,7 @@ export const resolvers = {
     category: resolveCategory,
     project: resolveProject,
     rating: resolveRating,
+    rankedProjects: resolveProjectRankingsForCategory
   },
   Mutation: {
     createProjects: createProjects,

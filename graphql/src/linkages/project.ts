@@ -3,9 +3,11 @@ import { prisma } from "../db";
 import {
   Project,
   MutationCreateProjectsArgs,
+  ScoredProject,
 } from "../__generated__/resolvers-types";
 import { v4 as uuidv4 } from "uuid";
 import { resolveCategory } from "./category";
+import { resolveRating } from "./rating";
 
 export async function resolveProject(
   parent,
@@ -115,4 +117,56 @@ export async function clearProjects() {
   console.info(`Deleted ${deleteCount} projects`);
 
   return deleteCount;
+}
+
+export async function resolveProjectRankingsForCategory(
+  _,
+  args: { categoryId: ID }
+): Promise<ScoredProject[]> {
+  const ratingRelationshipsFromDB = await prisma.rating.findMany({
+    where: {
+      RatingRelationships: {
+        some: {
+          categoryId: args.categoryId,
+        },
+      },
+    },
+    include: {
+      WorseRating: true,
+      BetterRating: true,
+    },
+  });
+
+  const rankedProjects = rankProjects(
+    ratingRelationshipsFromDB.map((rating) => ({
+      better: rating.BetterRating[0].betterProjectId,
+      worse: rating.WorseRating[0].worseProjectId,
+    }))
+  );
+
+  console.log(JSON.stringify(ratingRelationshipsFromDB, null, 2));
+  console.log(rankedProjects);
+
+  return [];
+}
+
+function rankProjects(
+  projects: Array<{ better: string; worse: string }>
+): string[] {
+  const projectRank: { [key: string]: number } = {};
+
+  // Iterate through each project to update rankings
+  projects.forEach((project) => {
+    // Increment the ranking for the better project
+    projectRank[project.better] = (projectRank[project.better] || 0) + 1;
+    // Decrement the ranking for the worse project
+    projectRank[project.worse] = (projectRank[project.worse] || 0) - 1;
+  });
+
+  // Convert the projectRank dictionary into an array of projects sorted by ranking
+  const sortedProjects = Object.keys(projectRank).sort(
+    (a, b) => projectRank[b] - projectRank[a]
+  );
+
+  return sortedProjects;
 }

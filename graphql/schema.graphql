@@ -8,15 +8,14 @@ type Category {
   id: ID!
   name: String!
   description: String
-  rankedProjects: [Project]!
 }
 
 type Rating {
   id: ID!
   judge: Judge!
-  project: Project!
-  lastRating: Rating
-  betterThanLast: Boolean!
+  betterProject: Project!
+  worseProject: Project!
+  category: Category!
 }
 
 type Project {
@@ -25,6 +24,11 @@ type Project {
   description: String
   url: String
   categories: [Category!]!
+}
+
+type ScoredProject {
+  project: Project!
+  score: Float!
 }
 
 type Judge {
@@ -68,7 +72,8 @@ type Query {
   judge(ids: [ID!]): [Judge]
   project(ids: [ID!]): [Project]
   category(ids: [ID!]): [Category]
-  rating(ids: [ID!]): [Rating]
+  rating(ids: [ID!], categoryId: ID, judge: ID): [Rating]
+  rankedProjects(categoryId: ID!): [ScoredProject!]!
 }
 
 type Mutation {
@@ -83,7 +88,7 @@ type Mutation {
     judgeId: ID!
     projectId: ID!
     categoryId: ID!
-    betterThanLast: Boolean!
+    currentProjectIsBetter: Boolean!
   ): Rating
 
   createLocation(number: Int): Location

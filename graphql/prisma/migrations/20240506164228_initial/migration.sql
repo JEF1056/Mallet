@@ -1,31 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `judgeId` on the `Rating` table. All the data in the column will be lost.
-  - You are about to drop the `JudgeLocations` table. If the table is not empty, all the data it contains will be lost.
-  - A unique constraint covering the columns `[id,lastRatingId]` on the table `Rating` will be added. If there are existing duplicate values, this will fail.
-  - Added the required column `url` to the `Project` table without a default value. This is not possible if the table is not empty.
-
-*/
--- DropForeignKey
-ALTER TABLE "JudgeLocations" DROP CONSTRAINT "JudgeLocations_judgeId_fkey";
-
--- DropForeignKey
-ALTER TABLE "JudgeLocations" DROP CONSTRAINT "JudgeLocations_locationId_fkey";
-
--- DropForeignKey
-ALTER TABLE "Rating" DROP CONSTRAINT "Rating_judgeId_fkey";
-
--- AlterTable
-ALTER TABLE "Project" ADD COLUMN     "url" TEXT NOT NULL,
-ALTER COLUMN "description" DROP NOT NULL;
-
--- AlterTable
-ALTER TABLE "Rating" DROP COLUMN "judgeId";
-
--- DropTable
-DROP TABLE "JudgeLocations";
-
 -- CreateTable
 CREATE TABLE "Category" (
     "id" TEXT NOT NULL,
@@ -33,6 +5,37 @@ CREATE TABLE "Category" (
     "description" TEXT,
 
     CONSTRAINT "Category_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Project" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "url" TEXT NOT NULL,
+
+    CONSTRAINT "Project_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Location" (
+    "id" TEXT NOT NULL,
+    "number" INTEGER NOT NULL,
+    "beingJudged" BOOLEAN NOT NULL DEFAULT false,
+    "noShow" BOOLEAN NOT NULL DEFAULT false,
+
+    CONSTRAINT "Location_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Judge" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "profilePictureUrl" TEXT,
+    "endingTimeAtLocation" TIMESTAMP(3),
+
+    CONSTRAINT "Judge_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -60,17 +63,26 @@ CREATE TABLE "ProjectCategory" (
 );
 
 -- CreateTable
+CREATE TABLE "Rating" (
+    "id" TEXT NOT NULL,
+    "betterThanLast" BOOLEAN NOT NULL,
+    "lastUpdated" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Rating_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "RatingRelationships" (
     "ratingId" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
     "judgeId" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
 
-    CONSTRAINT "RatingRelationships_pkey" PRIMARY KEY ("ratingId","projectId","judgeId","categoryId")
+    CONSTRAINT "RatingRelationships_pkey" PRIMARY KEY ("projectId","judgeId","categoryId")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Rating_id_lastRatingId_key" ON "Rating"("id", "lastRatingId");
+CREATE UNIQUE INDEX "Location_number_key" ON "Location"("number");
 
 -- AddForeignKey
 ALTER TABLE "JudgeRelationships" ADD CONSTRAINT "JudgeRelationships_judgeId_fkey" FOREIGN KEY ("judgeId") REFERENCES "Judge"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

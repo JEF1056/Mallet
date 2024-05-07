@@ -4,6 +4,7 @@ import {
   Category,
   MutationCreateCategoryArgs,
 } from "../__generated__/resolvers-types";
+import { resolveRating } from "./rating";
 
 export async function resolveCategory(
   parent,
@@ -19,12 +20,13 @@ export async function resolveCategory(
       : undefined,
   });
 
-  const categories: Category[] = categoryInformationFromDB.map((category) => ({
-    id: category.id,
-    name: category.name,
-    description: category.description,
-    rankedProjects: [], // TODO: Implement this
-  }));
+  const categories: Category[] = await Promise.all(
+    categoryInformationFromDB.map(async (category) => ({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+    }))
+  );
 
   return categories;
 }
@@ -46,6 +48,5 @@ export async function createCategory(
     id: category.id,
     name: category.name,
     description: category.description,
-    rankedProjects: [], // TODO: Implement this
   };
 }
