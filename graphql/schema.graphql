@@ -64,7 +64,7 @@ input ProfileInput {
 input ProjectInput {
   name: String!
   description: String
-  url: String
+  url: String!
   categoryIds: [ID!]!
 }
 
