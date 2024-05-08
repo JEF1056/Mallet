@@ -1,4 +1,35 @@
 services:
+  frontend:
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    build: ./frontend
+    command: npm run dev
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - graphql
+    volumes:
+      - ./frontend/dist:/usr/src/frontend/dist
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /usr/src/frontend
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./frontend
+          ignore:
+            - node_modules/
+            - dist/
+            - src/
+            - public/
+            - README.md
+            - .gitignore
+            - .dockerignore
   graphql:
     environment:
       - NODE_ENV=development
