@@ -1,6 +1,6 @@
 # Mallet
 
-A realtime, modern, and transparent hackathon juding and logistics software, designed with a focus on simplifying the thr process fo juding for hackers, judges, and organizers alike
+A realtime, modern, and transparent hackathon juding and logistics software, designed with a focus on simplifying the the process of judging for hackers, judges, and organizers alike
 
 # Setup
 
