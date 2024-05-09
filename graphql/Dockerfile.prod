@@ -6,5 +6,5 @@ COPY prisma ./
 RUN npx prisma generate
 COPY . .
 EXPOSE 4000
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 CMD ["npm", "start"]

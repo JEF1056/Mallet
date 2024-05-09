@@ -1,10 +1,11 @@
+name: mallet-dev
+
 services:
   frontend:
     environment:
       - NODE_ENV=development
       - PORT=3000
     build: ./frontend
-    command: npm run dev
     container_name: frontend
     ports:
       - "3000:3000"
@@ -32,14 +33,12 @@ services:
             - .dockerignore
   graphql:
     environment:
-      - NODE_ENV=development
       - PORT=4000
       - DATABASE_URL=postgres://postgres:FYnHvLGqxxLWAkAWNexTcNuqUHDreRPq@db:5432/postgres
       - REDIS_PORT=6379
       - REDIS_HOST=cache
       - REDIS_PASSWORD=4RydQWxu42bfDMkmR97BuN8nfB6rVy52
     build: ./graphql
-    command: npm start
     container_name: graphql
     ports:
       - "4000:4000"

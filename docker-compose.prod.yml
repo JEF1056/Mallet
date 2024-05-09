@@ -1,0 +1,60 @@
+name: mallet-prod
+
+services:
+  frontend:
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: frontend-prod
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - graphql
+  graphql:
+    environment:
+      - PORT=4000
+      - DATABASE_URL=postgres://postgres:FYnHvLGqxxLWAkAWNexTcNuqUHDreRPq@db:5432/postgres
+      - REDIS_PORT=6379
+      - REDIS_HOST=cache
+      - REDIS_PASSWORD=4RydQWxu42bfDMkmR97BuN8nfB6rVy52
+    build:
+      context: ./graphql
+      dockerfile: Dockerfile.prod
+    container_name: graphql-prod
+    restart: always
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+      - cache
+  db:
+    image: postgres:14.1-alpine
+    container_name: postgres-prod
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=FYnHvLGqxxLWAkAWNexTcNuqUHDreRPq
+      - POSTGRES_DB=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+  cache:
+    image: redis:6.2-alpine
+    container_name: redis-prod
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass 4RydQWxu42bfDMkmR97BuN8nfB6rVy52
+    volumes:
+      - cache:/data
+
+volumes:
+  db:
+    driver: local
+  cache:
+    driver: local

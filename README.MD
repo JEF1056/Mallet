@@ -13,8 +13,6 @@ Set up with the following commands:
 ```
 cd graphql
 npm install
-docker-compose up -d db
-npm run migrate
 cd ../frontend
 npm install
 cd ..
@@ -29,3 +27,7 @@ docker-compose up --build --watch
 ### Production
 
 TBD
+Going command is:
+```
+docker-compose -f docker-compose.prod.yml up --build
+```
