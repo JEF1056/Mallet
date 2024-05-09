@@ -12,11 +12,11 @@ type Category {
 
 type Rating {
   id: ID!
-  judge: Judge!
-  project: Project!
+  judge: Judge
+  project: Project
   betterProject: Project
   worseProject: Project
-  category: Category!
+  category: Category
 }
 
 type Project {
@@ -25,6 +25,10 @@ type Project {
   description: String
   url: String
   categories: [Category!]!
+  locationNumber: Int
+  noShow: Boolean!
+  beingJudgedBy: [Judge!]!
+  assignedJudges: [Judge!]!
 }
 
 type ScoredProject {
@@ -35,24 +39,15 @@ type ScoredProject {
 type Judge {
   id: ID!
   profile: Profile!
-  atLocation: Location
+  judgingProject: Project
   endingTimeAtLocation: Int
-  unjudgedLocations: [Location]!
-  judgedLocations: [Location]!
+  assignedProjects: [Project!]!
+  ratedProjects: [Project!]!
 }
 
 type Organizer {
   id: ID!
   profile: Profile!
-}
-
-type Location {
-  id: ID!
-  number: Int!
-  beingJudged: Boolean!
-  assignedProject: Project
-  assignedJudges: [Judge]!
-  noShow: Boolean!
 }
 
 input ProfileInput {
@@ -69,7 +64,6 @@ input ProjectInput {
 }
 
 type Query {
-  location(ids: [ID!]): [Location]
   judge(ids: [ID!]): [Judge]
   project(ids: [ID!]): [Project]
   category(ids: [ID!]): [Category]
@@ -78,7 +72,7 @@ type Query {
 }
 
 type Mutation {
-  createProjects(projects: [ProjectInput!]!): [Project]
+  setProjects(projects: [ProjectInput!]!): [Project]
   clearProjects: Int
 
   createCategory(name: String!, description: String): Category
@@ -92,20 +86,9 @@ type Mutation {
     currentProjectIsBetter: Boolean
   ): Rating
 
-  createLocation(number: Int): Location
-  assignJudgesToLocation(judgeIds: [ID!]!, locationId: ID!): Location
-  unassignJudgesFromLocation(judgeIds: [ID!]!, locationId: ID!): Location
-  judgeVisitingLocation(
-    judgeId: ID!
-    locationId: ID!
-    endingTimeAtLocation: Int
-  ): Location
-  setLocationProject(projectId: ID!, locationId: ID!): Location
-
   createJudge(profile: ProfileInput!): Judge
 }
 
 type Subscription {
   uptime: Int
-  location(id: ID!): Location
 }

@@ -5,16 +5,17 @@ import {
   MutationSetRatingArgs,
   Project,
   Judge,
-} from "../__generated__/resolvers-types";
+  Category,
+} from "../../__generated__/resolvers-types";
 import { resolveJudge } from "./judge";
 import { resolveProject } from "./project";
 import { v4 as uuidv4 } from "uuid";
 import { resolveCategory } from "./category";
 import { GraphQLError } from "graphql";
-import { batchResolveAndMap } from "./helpers";
+import { batchResolveUniqueAndMap } from "../helpers";
 
 export async function resolveRating(
-  parent,
+  depth: number | undefined,
   args: { ids?: ID[]; categoryId?: ID },
   context,
   info
@@ -38,39 +39,51 @@ export async function resolveRating(
     },
   });
 
-  // resolvedProjects includes items from RatingRelationships, BetterRating, and WorseRating. Map by ID.
-  const resolvedProjects: { [key: ID]: Project } = await batchResolveAndMap(
-    resolveProject,
-    ratingInformationFromDB
-      .flatMap((rating) => [
-        rating.RatingRelationships[0].projectId,
-        rating.BetterRating[0]?.betterProjectId,
-        rating.WorseRating[0]?.worseProjectId,
-      ])
-      .filter((value) => value)
-  );
+  let resolvedProjects: { [key: ID]: Project } = {};
+  let resolvedJudges: { [key: ID]: Judge } = {};
+  let resolvedCategories: { [key: ID]: Category } = {};
 
-  const resolvedJudges: { [key: ID]: Judge } = await batchResolveAndMap(
-    resolveJudge,
-    ratingInformationFromDB.map(
-      (rating) => rating.RatingRelationships[0].judgeId
-    )
-  );
+  if (depth <= 1) {
+    // resolvedProjects includes items from RatingRelationships, BetterRating, and WorseRating. Map by ID.
+    resolvedProjects = await batchResolveUniqueAndMap(
+      depth,
+      resolveProject,
+      ratingInformationFromDB
+        .flatMap((rating) => [
+          rating.RatingRelationships[0].projectId,
+          rating.BetterRating[0]?.betterProjectId,
+          rating.WorseRating[0]?.worseProjectId,
+        ])
+        .filter((value) => value)
+    );
 
-  const resolvedCategories = await batchResolveAndMap(
-    resolveCategory,
-    ratingInformationFromDB.map(
-      (rating) => rating.RatingRelationships[0].categoryId
-    )
-  );
+    resolvedJudges = await batchResolveUniqueAndMap(
+      depth,
+      resolveJudge,
+      ratingInformationFromDB.map(
+        (rating) => rating.RatingRelationships[0].judgeId
+      )
+    );
+
+    resolvedCategories = await batchResolveUniqueAndMap(
+      depth,
+      resolveCategory,
+      ratingInformationFromDB.map(
+        (rating) => rating.RatingRelationships[0].categoryId
+      )
+    );
+  }
 
   const ratings: Rating[] = ratingInformationFromDB.map((rating) => ({
     id: rating.id,
-    judge: resolvedJudges[rating.RatingRelationships[0].judgeId],
-    project: resolvedProjects[rating.RatingRelationships[0].projectId],
-    category: resolvedCategories[rating.RatingRelationships[0].categoryId],
-    betterProject: resolvedProjects[rating.BetterRating[0]?.betterProjectId],
-    worseProject: resolvedProjects[rating.WorseRating[0]?.worseProjectId],
+    judge: resolvedJudges[rating.RatingRelationships[0].judgeId] || null,
+    project: resolvedProjects[rating.RatingRelationships[0].projectId] || null,
+    category:
+      resolvedCategories[rating.RatingRelationships[0].categoryId] || null,
+    betterProject:
+      resolvedProjects[rating.BetterRating[0]?.betterProjectId] || null,
+    worseProject:
+      resolvedProjects[rating.WorseRating[0]?.worseProjectId] || null,
   }));
 
   return ratings;
@@ -107,7 +120,7 @@ export async function setRating(
     if (!rating) {
       await prisma.$transaction(async (tx) => {
         // Create a new rating
-        const newRating = await prisma.rating.create({
+        const newRating = await tx.rating.create({
           data: {
             id: ratingId,
           },
@@ -116,7 +129,7 @@ export async function setRating(
         ratingCreatedAt = newRating.createdAt;
 
         // Create the relationships
-        await prisma.ratingRelationships.create({
+        await tx.ratingRelationships.create({
           data: {
             ratingId: ratingId,
             judgeId: args.judgeId,

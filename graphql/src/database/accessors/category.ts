@@ -3,8 +3,7 @@ import { prisma } from "../db";
 import {
   Category,
   MutationCreateCategoryArgs,
-} from "../__generated__/resolvers-types";
-import { resolveRating } from "./rating";
+} from "../../__generated__/resolvers-types";
 
 export async function resolveCategory(
   parent,

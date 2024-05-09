@@ -22,62 +22,57 @@ model Category {
 }
 
 model Project {
-    id                  String                @id @default(uuid())
-    name                String
-    description         String?
-    url                 String                @unique
-    RatingRelationships RatingRelationships[]
-    ProjectLocation     ProjectLocation[]
-    ProjectCategory     ProjectCategory[]
-    WorseRating         WorseRating[]
-    BetterRating        BetterRating[]
-}
-
-model Location {
-    id                 String               @id @default(uuid())
-    number             Int                  @unique
-    beingJudged        Boolean              @default(false)
-    noShow             Boolean              @default(false)
-    JudgeRelationships JudgeRelationships[]
-    ProjectLocation    ProjectLocation[]
-}
-
-model Judge {
-    id                   String                @id @default(uuid())
-    name                 String
-    description          String?
-    profilePictureUrl    String?
-    endingTimeAtLocation DateTime?
-    JudgeRelationships   JudgeRelationships[]
-    RatingRelationships  RatingRelationships[]
-}
-
-// Below are relationship tables, which help us match up values when needed.
-model JudgeRelationships {
-    judge      Judge    @relation(fields: [judgeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    judgeId    String
-    location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    locationId String
-
-    @@id([judgeId, locationId])
-}
-
-model ProjectLocation {
-    project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    projectId  String
-    location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    locationId String
-
-    @@id([projectId, locationId])
+    id                      String                    @id @default(uuid())
+    name                    String
+    description             String?
+    url                     String                    @unique
+    locationNumber          Int                       @unique
+    noShow                  Boolean                   @default(false)
+    RatingRelationships     RatingRelationships[]
+    ProjectCategory         ProjectCategory[]
+    WorseRating             WorseRating[]
+    BetterRating            BetterRating[]
+    JudgeProjectAssignments JudgeProjectAssignments[]
+    JudgeProjectVisits      JudgeProjectVisits[]
 }
 
 model ProjectCategory {
-    project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
     projectId  String
-    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
     categoryId String
 
     @@id([projectId, categoryId])
+}
+
+model Judge {
+    id                      String                    @id @default(uuid())
+    name                    String
+    description             String?
+    profilePictureUrl       String?
+    RatingRelationships     RatingRelationships[]
+    JudgeProjectAssignments JudgeProjectAssignments[]
+    JudgeProjectVisits      JudgeProjectVisits[]
+}
+
+model JudgeProjectAssignments {
+    judge     Judge   @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+    judgeId   String
+    project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    projectId String
+
+    @@id([judgeId, projectId])
+}
+
+model JudgeProjectVisits {
+    startTime DateTime  @default(now())
+    endTime   DateTime?
+    judge     Judge     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+    judgeId   String
+    project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+    projectId String
+
+    @@id([judgeId, projectId])
 }
 
 model Rating {
@@ -90,31 +85,31 @@ model Rating {
 }
 
 model RatingRelationships {
-    rating     Rating   @relation(fields: [ratingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    rating     Rating   @relation(fields: [ratingId], references: [id], onDelete: Cascade)
     ratingId   String
-    judge      Judge    @relation(fields: [judgeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    judge      Judge    @relation(fields: [judgeId], references: [id], onDelete: Cascade)
     judgeId    String
-    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
     categoryId String
-    Project    Project? @relation(fields: [projectId], references: [id])
+    Project    Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
     projectId  String?
 
     @@id([ratingId, judgeId, categoryId])
 }
 
 model WorseRating {
-    rating         Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    rating         Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade)
     ratingId       String
-    projects       Project @relation(fields: [worseProjectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    projects       Project @relation(fields: [worseProjectId], references: [id], onDelete: Cascade)
     worseProjectId String
 
     @@id([ratingId])
 }
 
 model BetterRating {
-    rating          Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    rating          Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade)
     ratingId        String
-    projects        Project @relation(fields: [betterProjectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    projects        Project @relation(fields: [betterProjectId], references: [id], onDelete: Cascade)
     betterProjectId String
 
     @@id([ratingId])

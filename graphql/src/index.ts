@@ -8,7 +8,7 @@ import express from "express";
 import cors from "cors";
 import { expressMiddleware } from "@apollo/server/express4";
 import { typeDefs, resolvers } from "./resolvers";
-import { prisma } from "./db";
+import { prisma } from "./database/db";
 import { ApolloServerPluginLandingPageDisabled } from "@apollo/server/plugin/disabled";
 
 export interface GlobalContext {
