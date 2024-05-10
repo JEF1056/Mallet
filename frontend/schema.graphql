@@ -1,0 +1,94 @@
+type Profile {
+  name: String!
+  description: String
+  profilePictureUrl: String
+}
+
+type Category {
+  id: ID!
+  name: String!
+  description: String
+}
+
+type Rating {
+  id: ID!
+  judge: Judge
+  project: Project
+  betterProject: Project
+  worseProject: Project
+  category: Category
+}
+
+type Project {
+  id: ID!
+  name: String!
+  description: String
+  url: String
+  categories: [Category!]!
+  locationNumber: Int
+  noShow: Boolean!
+  beingJudgedBy: [Judge!]!
+  assignedJudges: [Judge!]!
+}
+
+type ScoredProject {
+  project: Project!
+  score: Float!
+}
+
+type Judge {
+  id: ID!
+  profile: Profile!
+  judgingProject: Project
+  endingTimeAtLocation: Int
+  assignedProjects: [Project!]!
+  ratedProjects: [Project!]!
+}
+
+type Organizer {
+  id: ID!
+  profile: Profile!
+}
+
+input ProfileInput {
+  name: String!
+  description: String
+  profilePictureUrl: String
+}
+
+input ProjectInput {
+  name: String!
+  description: String
+  url: String!
+  categoryIds: [ID!]!
+}
+
+type Query {
+  judge(ids: [ID!]): [Judge]
+  project(ids: [ID!]): [Project]
+  category(ids: [ID!]): [Category]
+  rating(ids: [ID!], categoryId: ID, judge: ID): [Rating]
+  rankedProjects(categoryId: ID!): [ScoredProject!]!
+}
+
+type Mutation {
+  setProjects(projects: [ProjectInput!]!): [Project]
+  clearProjects: Int
+
+  createCategory(name: String!, description: String): Category
+
+  # Note: if lastRatingId is not provided, but the judge has judged before, we will retreive the last project from the database.
+  # This is slower, and when possible, you should provide the lastRatingId.
+  setRating(
+    judgeId: ID!
+    projectId: ID!
+    categoryId: ID!
+    currentProjectIsBetter: Boolean
+  ): Rating
+
+  createJudge(profile: ProfileInput!): Judge
+}
+
+type Subscription {
+  uptime: Int
+}

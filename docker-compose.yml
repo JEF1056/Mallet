@@ -12,6 +12,7 @@ services:
     depends_on:
       - graphql
     volumes:
+      - ./frontend/src/__generated__:/usr/src/frontend/src/__generated__
       - ./frontend/dist:/usr/src/frontend/dist
     develop:
       watch:
