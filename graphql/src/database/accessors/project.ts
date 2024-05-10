@@ -14,6 +14,7 @@ import {
   findFirstNonContinuousNumber,
 } from "../helpers";
 import { resolveJudge } from "./judge";
+import { pubsub } from "../../pubsub";
 
 export async function resolveProject(
   depth: number | undefined,
@@ -165,6 +166,8 @@ export async function setProjects(
     null,
     null
   );
+
+  pubsub.publish("PROJECTS_UPDATED", { projects: resolvedProjects });
 
   return resolvedProjects;
 }

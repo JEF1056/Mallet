@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { pubsub } from "./redis";
+import { pubsub } from "./pubsub";
 import { createJudge, resolveJudge } from "./database/accessors/judge";
 import { withFilter } from "graphql-subscriptions";
 import {

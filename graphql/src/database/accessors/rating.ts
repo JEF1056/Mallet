@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from "uuid";
 import { resolveCategory } from "./category";
 import { GraphQLError } from "graphql";
 import { batchResolveUniqueAndMap } from "../helpers";
+import { pubsub } from "../../pubsub";
 
 export async function resolveRating(
   depth: number,
@@ -228,6 +229,8 @@ export async function setRating(
     null,
     null
   );
+
+  pubsub.publish("RATING_UPDATED", { rating: resolvedRating[0] });
 
   return resolvedRating[0];
 }
