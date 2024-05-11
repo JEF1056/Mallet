@@ -1,5 +1,5 @@
 import { Badge, Button, Input, Join, Pagination, Table } from "react-daisyui";
-import { useRecoilState, useResetRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
 import { createCategoriesComponentState } from "../../../atoms";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -17,7 +17,7 @@ export default function CreateCategoriesComponent() {
   const [categories, setCategories] = useRecoilState(
     createCategoriesComponentState
   );
-  const resetCategories = useResetRecoilState(createCategoriesComponentState);
+  //   const resetCategories = useResetRecoilState(createCategoriesComponentState);
 
   return (
     <div className="flex flex-col gap-4">
