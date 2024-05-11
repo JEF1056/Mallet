@@ -1,10 +1,12 @@
+import { useApolloClient } from "@apollo/client";
 import { faGear } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Avatar, Button, Dropdown, Navbar } from "react-daisyui";
+import { Avatar, Badge, Button, Dropdown, Navbar } from "react-daisyui";
 import { useNavigate } from "react-router-dom";
 
 export default function NavBarComponent() {
   const navigate = useNavigate();
+  const apolloClient = useApolloClient();
 
   return (
     <Navbar className="rounded-box bg-base-300">
@@ -16,6 +18,7 @@ export default function NavBarComponent() {
           onClick={() => navigate("/")}
         >
           🔨 Mallet
+          <Badge size="xs" color={apolloClient ? "success" : "error"} />
         </Button>
       </div>
       <div className="flex-none gap-2">

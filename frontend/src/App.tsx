@@ -2,7 +2,7 @@ import NavBarComponent from "./components/NavBarComponent";
 import ConfigurationPage from "./components/pages/ConfigurationPage/ConfigurationPage";
 // import { Avatar } from "react-daisyui";
 // import { useQuery, gql } from "@apollo/client";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 export default function App() {
   return (

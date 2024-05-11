@@ -8,15 +8,18 @@ import {
   Table,
 } from "react-daisyui";
 import Papa from "papaparse";
-import { useRecoilState, useResetRecoilState } from "recoil";
-import { createProjectsComponentState } from "../../../atoms";
+import { useRecoilState, useResetRecoilState, useSetRecoilState } from "recoil";
+import {
+  createCategoriesComponentState,
+  createProjectsComponentState,
+} from "../../../atoms";
 import { truncate } from "../../../helpers/csv";
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faAnglesLeft,
   faAnglesRight,
-  faSave,
+  faUpload,
   faUndo,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -26,6 +29,7 @@ export default function CreateProjectsComponent() {
 
   const [missingColumns, setMissingColumns] = useState<string[]>([]);
   const [projects, setProjects] = useRecoilState(createProjectsComponentState);
+  const setCategories = useSetRecoilState(createCategoriesComponentState);
   const resetProjects = useResetRecoilState(createProjectsComponentState);
 
   useEffect(() => {
@@ -99,7 +103,10 @@ export default function CreateProjectsComponent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-row gap-2 rounded-top">
+      <div className="flex flex-row gap-2 rounded-top items-center">
+        <label className="flex text-lg px-4 rounded-box bg-base-200 font-bold h-full items-center text-nowrap">
+          Projects 📋
+        </label>
         <FileInput
           className="w-full"
           accept=".csv"
@@ -112,9 +119,13 @@ export default function CreateProjectsComponent() {
                   // If the new column names differ, reset.
                   if (
                     projects.inputData &&
-                    Object.keys(result.data[0]) !==
+                    Object.keys(result.data[0]) !=
                       Object.keys(projects.inputData[0])
                   ) {
+                    console.log(
+                      Object.keys(result.data[0]),
+                      Object.keys(projects.inputData[0])
+                    );
                     resetProjects();
                   }
                   setProjects((project) => ({
@@ -133,14 +144,14 @@ export default function CreateProjectsComponent() {
         )}
         {projects.inputData && (
           <Button color="info" disabled={missingColumns.length > 0}>
-            <FontAwesomeIcon icon={faSave} />
+            <FontAwesomeIcon icon={faUpload} />
           </Button>
         )}
       </div>
 
       {projects.inputData && (
         <>
-          <div className="flex-shrink-0 overflow-x-auto no-scrollbar overflow-y-auto h-128 rounded-box">
+          <div className="overflow-x-auto no-scrollbar overflow-y-auto h-128 rounded-box">
             <Table pinRows size="sm" className="bg-base-300">
               <Table.Head>
                 <span></span>
@@ -197,17 +208,29 @@ export default function CreateProjectsComponent() {
                                         ?.split(",")
                                         .map((category: string) =>
                                           category.trim()
-                                        );
+                                        )
+                                        .filter((category: string) => category);
                                     })
                                   )
                                 );
 
-                                setProjects((existingData) => ({
-                                  ...existingData,
-                                  parsedCategories: categories.filter(
-                                    (category) => category
-                                  ),
-                                }));
+                                setCategories((existingData) => {
+                                  const globalCategories =
+                                    existingData.categories.filter(
+                                      (category) => category.global
+                                    );
+
+                                  return {
+                                    ...existingData,
+                                    categories: [
+                                      ...globalCategories,
+                                      ...categories.map((category) => ({
+                                        name: category,
+                                        global: false,
+                                      })),
+                                    ],
+                                  };
+                                });
                               }
                             }}
                           >
@@ -235,8 +258,8 @@ export default function CreateProjectsComponent() {
             </Table>
           </div>
 
-          <div className="flex flex-grow justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-grow justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge color="primary">
                 Project Count: {projects.inputData.length}
               </Badge>
@@ -249,39 +272,43 @@ export default function CreateProjectsComponent() {
               )}
             </div>
 
-            <Pagination className="bg-base-300 justify-self-end">
-              <Button
-                className="join-item"
-                active={projects.page != 1}
-                disabled={projects.page == 1}
-                onClick={() =>
-                  setProjects((existingData) => ({
-                    ...existingData,
-                    page: existingData.page - 1,
-                  }))
-                }
-              >
-                <FontAwesomeIcon icon={faAnglesLeft} />
-              </Button>
-              <Button className="join-item" disabled>
-                {`Page ${projects.page} of ${Math.ceil(
-                  projects.inputData.length / pageSize
-                )}`}
-              </Button>
-              <Button
-                className="join-item"
-                active={projects.page < projects.inputData.length / pageSize}
-                disabled={projects.page >= projects.inputData.length / pageSize}
-                onClick={() =>
-                  setProjects((existingData) => ({
-                    ...existingData,
-                    page: existingData.page + 1,
-                  }))
-                }
-              >
-                <FontAwesomeIcon icon={faAnglesRight} />
-              </Button>
-            </Pagination>
+            {projects.inputData.length > pageSize && (
+              <Pagination className="bg-base-300 justify-self-end">
+                <Button
+                  className="join-item"
+                  active={projects.page != 1}
+                  disabled={projects.page == 1}
+                  onClick={() =>
+                    setProjects((existingData) => ({
+                      ...existingData,
+                      page: existingData.page - 1,
+                    }))
+                  }
+                >
+                  <FontAwesomeIcon icon={faAnglesLeft} />
+                </Button>
+                <Button className="join-item" disabled>
+                  {`Page ${projects.page} of ${Math.ceil(
+                    projects.inputData.length / pageSize
+                  )}`}
+                </Button>
+                <Button
+                  className="join-item"
+                  active={projects.page < projects.inputData.length / pageSize}
+                  disabled={
+                    projects.page >= projects.inputData.length / pageSize
+                  }
+                  onClick={() =>
+                    setProjects((existingData) => ({
+                      ...existingData,
+                      page: existingData.page + 1,
+                    }))
+                  }
+                >
+                  <FontAwesomeIcon icon={faAnglesRight} />
+                </Button>
+              </Pagination>
+            )}
           </div>
         </>
       )}

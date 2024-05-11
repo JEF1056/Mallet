@@ -15,8 +15,9 @@ datasource db {
 
 model Category {
     id                  String                @id @default(uuid())
-    name                String
+    name                String                @unique
     description         String?
+    global              Boolean               @default(false)
     ProjectCategory     ProjectCategory[]
     RatingRelationships RatingRelationships[]
 }

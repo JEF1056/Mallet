@@ -25,12 +25,16 @@ export const createProjectsComponentState = atom<{
 });
 
 export const createCategoriesComponentState = atom<{
-  parsedCategories: string[];
-  customCategories: string[];
+  categories: {
+    name: string;
+    global: boolean;
+  }[];
+  page: number;
 }>({
   key: "createCategoriesComponentState",
+  effects_UNSTABLE: [persistAtom],
   default: {
-    parsedCategories: [],
-    customCategories: [],
+    categories: [],
+    page: 1,
   },
 });
