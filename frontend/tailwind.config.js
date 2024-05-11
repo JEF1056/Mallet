@@ -7,7 +7,11 @@ export default {
     "node_modules/react-daisyui/dist/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      spacing: {
+        128: "32rem",
+      },
+    },
   },
   daisyui: {
     themes: ["dim"],

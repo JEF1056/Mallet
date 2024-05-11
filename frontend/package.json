@@ -26,6 +26,7 @@
         "react-router-dom": "^6.23.0",
         "recoil": "^0.7.7",
         "recoil-nexus": "^0.5.0",
+        "recoil-persist": "^5.1.0",
         "serve": "^14.2.3"
     },
     "devDependencies": {

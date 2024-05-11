@@ -6,7 +6,6 @@ import { ApolloClient, InMemoryCache, ApolloProvider } from "@apollo/client";
 import { RecoilRoot } from "recoil";
 import RecoilNexus from "recoil-nexus";
 
-console.log(import.meta.env.VITE_GRAPHQL_URL);
 const client = new ApolloClient({
   uri: import.meta.env.VITE_GRAPHQL_URL,
   cache: new InMemoryCache(),
