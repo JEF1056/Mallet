@@ -1,4 +1,4 @@
-import { Badge, Button, Input, Join, Pagination, Table } from "react-daisyui";
+import { Badge, Button, Input, Join, Pagination, Table, Toggle } from "react-daisyui";
 import { useRecoilState } from "recoil";
 import { createCategoriesComponentState } from "../../../atoms";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -6,14 +6,17 @@ import {
   faAnglesLeft,
   faAnglesRight,
   faCheck,
+  faExclamationTriangle,
   faPlus,
   faTrash,
   faUpload,
   faX,
 } from "@fortawesome/free-solid-svg-icons";
+import { useState } from "react";
 
 export default function CreateCategoriesComponent() {
   const pageSize = 20;
+  const [newCategoryInput, setNewCategoryInput] = useState("");
   const [categories, setCategories] = useRecoilState(
     createCategoriesComponentState
   );
@@ -28,9 +31,31 @@ export default function CreateCategoriesComponent() {
         <Join className="flex-grow">
           <Input
             className="join-item flex-grow"
-            placeholder="New category..."
+            placeholder="New global category..."
+            value={newCategoryInput}
+            onChange={(event) => setNewCategoryInput(event.currentTarget.value)}
           />
-          <Button className="join-item">
+          <Button
+            disabled={
+              categories.categories
+                .map((category) => category.name)
+                .includes(newCategoryInput) || newCategoryInput == ""
+            }
+            className="join-item"
+            onClick={() => {
+              setCategories((existingData) => ({
+                ...existingData,
+                categories: [
+                  ...existingData.categories,
+                  {
+                    name: newCategoryInput,
+                    global: true,
+                  },
+                ],
+              }));
+              setNewCategoryInput("");
+            }}
+          >
             <FontAwesomeIcon icon={faPlus} />
           </Button>
         </Join>
@@ -54,6 +79,8 @@ export default function CreateCategoriesComponent() {
 
           <Table.Body>
             {categories.categories
+              .slice() // this is to softcopy the readonly array
+              .reverse()
               .slice(
                 categories.page * pageSize - pageSize,
                 pageSize * categories.page
@@ -63,6 +90,7 @@ export default function CreateCategoriesComponent() {
                   <span>{index + 1 + (categories.page - 1) * pageSize}</span>
                   <span>{category.name}</span>
                   <span>
+                    <Toggle></Toggle>
                     {category.global ? (
                       <FontAwesomeIcon icon={faCheck} />
                     ) : (
@@ -70,9 +98,21 @@ export default function CreateCategoriesComponent() {
                     )}
                   </span>
                   <span>
-                    {/* Only global categories can be  */}
+                    {/* Only global categories can be deleted */}
                     {category.global && (
-                      <Button size="sm" color="error">
+                      <Button
+                        size="sm"
+                        color="error"
+                        onClick={() =>
+                          setCategories((existingData) => ({
+                            ...existingData,
+                            categories: existingData.categories.filter(
+                              (existingCategory) =>
+                                existingCategory.name != category.name
+                            ),
+                          }))
+                        }
+                      >
                         <FontAwesomeIcon icon={faTrash} />
                       </Button>
                     )}
@@ -89,6 +129,12 @@ export default function CreateCategoriesComponent() {
           <Badge color="primary">
             Category Count: {categories.categories.length}
           </Badge>
+          {categories.categories.length > 50 && (
+            <Badge color="warning">
+              <FontAwesomeIcon className="pr-1" icon={faExclamationTriangle} />
+              This looks like a lot of categories, are you sure this is correct?
+            </Badge>
+          )}
         </div>
 
         {categories.categories.length > pageSize && (

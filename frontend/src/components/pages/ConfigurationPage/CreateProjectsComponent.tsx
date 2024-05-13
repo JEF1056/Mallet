@@ -223,11 +223,11 @@ export default function CreateProjectsComponent() {
                                   return {
                                     ...existingData,
                                     categories: [
-                                      ...globalCategories,
                                       ...categories.map((category) => ({
                                         name: category,
                                         global: false,
                                       })),
+                                      ...globalCategories,
                                     ],
                                   };
                                 });
