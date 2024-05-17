@@ -9,7 +9,11 @@ import {
   resolveProject,
   resolveProjectRankingsForCategory,
 } from "./database/accessors/project";
-import { createCategory, resolveCategory } from "./database/accessors/category";
+import {
+  deleteCategory,
+  resolveCategory,
+  setCategories,
+} from "./database/accessors/category";
 import { resolveRating, setRating } from "./database/accessors/rating";
 
 let currentNumber = 0;
@@ -41,7 +45,8 @@ export const resolvers = {
   Mutation: {
     setProjects: setProjects,
     createJudge: createJudge,
-    createCategory: createCategory,
+    setCategories: setCategories,
+    deleteCategory: deleteCategory,
     setRating: setRating,
 
     clearProjects: clearProjects,

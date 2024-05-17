@@ -8,6 +8,7 @@ type Category {
   id: ID!
   name: String!
   description: String
+  global: Boolean!
 }
 
 type Rating {
@@ -63,6 +64,12 @@ input ProjectInput {
   categoryIds: [ID!]!
 }
 
+input CategoryInput {
+  name: String!
+  description: String
+  global: Boolean!
+}
+
 type Query {
   judge(ids: [ID!]): [Judge]
   project(ids: [ID!]): [Project]
@@ -75,7 +82,8 @@ type Mutation {
   setProjects(projects: [ProjectInput!]!): [Project]
   clearProjects: Int
 
-  createCategory(name: String!, description: String): Category
+  setCategories(categories: [CategoryInput!]!): [Category]
+  deleteCategory(id: ID!): Category
 
   # Note: if lastRatingId is not provided, but the judge has judged before, we will retreive the last project from the database.
   # This is slower, and when possible, you should provide the lastRatingId.

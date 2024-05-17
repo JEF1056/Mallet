@@ -6,6 +6,7 @@ import {
   Link,
   Pagination,
   Table,
+  Tooltip,
 } from "react-daisyui";
 import Papa from "papaparse";
 import { useRecoilState, useResetRecoilState, useSetRecoilState } from "recoil";
@@ -68,7 +69,7 @@ export default function CreateProjectsComponent() {
         );
       } else if (column_mapping_type == "Description") {
         columns.push(
-          <span key={columnName} className="flex flex-wrap max-w-96">
+          <span key={columnName} className="flex flex-wrap w-96">
             {truncate(value, 200, "...")}
           </span>
         );
@@ -138,14 +139,21 @@ export default function CreateProjectsComponent() {
           }}
         />
         {projects.inputData && (
-          <Button color="error" onClick={resetProjects}>
-            <FontAwesomeIcon icon={faUndo} />
-          </Button>
+          <Tooltip message="Reset local copy of projects" position="left">
+            <Button color="error" onClick={resetProjects}>
+              <FontAwesomeIcon icon={faUndo} />
+            </Button>
+          </Tooltip>
         )}
         {projects.inputData && (
-          <Button color="info" disabled={missingColumns.length > 0}>
-            <FontAwesomeIcon icon={faUpload} />
-          </Button>
+          <Tooltip
+            message="Create / update project and non-global category information on the server"
+            position="left"
+          >
+            <Button color="info" disabled={missingColumns.length > 0}>
+              <FontAwesomeIcon icon={faUpload} />
+            </Button>
+          </Tooltip>
         )}
       </div>
 
@@ -216,19 +224,21 @@ export default function CreateProjectsComponent() {
 
                                 setCategories((existingData) => {
                                   const globalCategories =
-                                    existingData.categories.filter(
+                                    existingData.localCategories.filter(
                                       (category) => category.global
                                     );
 
                                   return {
                                     ...existingData,
-                                    categories: [
+                                    localCategories: [
                                       ...categories.map((category) => ({
                                         name: category,
                                         global: false,
                                       })),
                                       ...globalCategories,
-                                    ],
+                                    ].sort((a, b) =>
+                                      a.name.localeCompare(b.name)
+                                    ),
                                   };
                                 });
                               }

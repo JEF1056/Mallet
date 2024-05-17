@@ -1,6 +1,11 @@
 import { atom } from "recoil";
 import { recoilPersist } from "recoil-persist";
-import { MutationSetProjectsArgs } from "./__generated__/resolvers-types";
+import {
+  Category,
+  CategoryInput,
+  Project,
+  ProjectInput,
+} from "./__generated__/resolvers-types";
 
 const { persistAtom } = recoilPersist();
 
@@ -9,7 +14,8 @@ export const createProjectsComponentState = atom<{
   columnNameToArg: { [key: string]: string | undefined };
   argToColumnName: { [key: string]: string | undefined };
   page: number;
-  gqlInputs: MutationSetProjectsArgs;
+  serverSideProjects: Project[];
+  localProjects: ProjectInput[];
 }>({
   key: "createProjectsComponentState",
   effects_UNSTABLE: [persistAtom],
@@ -18,23 +24,21 @@ export const createProjectsComponentState = atom<{
     columnNameToArg: {},
     argToColumnName: {},
     page: 1,
-    gqlInputs: {
-      projects: [],
-    },
+    localProjects: [],
+    serverSideProjects: [],
   },
 });
 
 export const createCategoriesComponentState = atom<{
-  categories: {
-    name: string;
-    global: boolean;
-  }[];
-  page: number;
+  serverSideCategories: Category[];
+  localCategories: CategoryInput[];
+  search: string;
 }>({
   key: "createCategoriesComponentState",
   effects_UNSTABLE: [persistAtom],
   default: {
-    categories: [],
-    page: 1,
+    serverSideCategories: [],
+    localCategories: [],
+    search: "",
   },
 });
