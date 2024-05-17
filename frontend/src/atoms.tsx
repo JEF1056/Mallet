@@ -6,6 +6,7 @@ import {
   Project,
   ProjectInput,
 } from "./__generated__/resolvers-types";
+import MiniSearch from "minisearch";
 
 const { persistAtom } = recoilPersist();
 
@@ -32,13 +33,11 @@ export const createProjectsComponentState = atom<{
 export const createCategoriesComponentState = atom<{
   serverSideCategories: Category[];
   localCategories: CategoryInput[];
-  search: string;
 }>({
   key: "createCategoriesComponentState",
   effects_UNSTABLE: [persistAtom],
   default: {
     serverSideCategories: [],
     localCategories: [],
-    search: "",
   },
 });

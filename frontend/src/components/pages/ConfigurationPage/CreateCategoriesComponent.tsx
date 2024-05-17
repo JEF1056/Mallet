@@ -22,6 +22,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useEffect, useState } from "react";
 import { gql, useMutation, useQuery } from "@apollo/client";
+import { useMiniSearch } from "react-minisearch";
+import { SearchOptions } from "minisearch";
 
 const setCategoriesGql = gql`
   mutation SetCategories($categories: [CategoryInput!]!) {
@@ -57,9 +59,26 @@ const getCategoryGql = gql`
 `;
 
 export default function CreateCategoriesComponent() {
+  const searchOptions: SearchOptions = {
+    boost: { name: 2 },
+    fuzzy: 0.2,
+  };
+
   const [newCategoryInput, setNewCategoryInput] = useState("");
+
   const [state, setState] = useRecoilState(createCategoriesComponentState);
   const resetState = useResetRecoilState(createCategoriesComponentState);
+
+  const [searchInput, setSearchInput] = useState("");
+  const { search, searchResults, addAll, removeAll } = useMiniSearch(
+    state.serverSideCategories,
+    {
+      fields: ["name", "description", "id"],
+      storeFields: ["name", "description", "id", "global"],
+      tokenize: (string) => string.split(/[\s-]+/),
+    }
+  );
+
   const [setServerCategories] = useMutation(setCategoriesGql); // { data, loading, error }] =
   const [deleteServerCategory] = useMutation(deleteCategoryGql);
   const { loading, error, data, refetch } = useQuery(getCategoryGql, {
@@ -74,8 +93,35 @@ export default function CreateCategoriesComponent() {
         ...existingData,
         serverSideCategories: data.category,
       }));
+      removeAll();
+      addAll(data.category);
+      search(searchInput, searchOptions);
     }
   }, [data]);
+
+  async function refetchAndUpdate() {
+    const serverResponse = await refetch();
+    setState((existingData) => ({
+      ...existingData,
+      serverSideCategories: serverResponse.data.category,
+    }));
+    removeAll();
+    addAll(serverResponse.data.category);
+    search(searchInput, searchOptions);
+  }
+
+  function getTableData() {
+    if (searchInput) {
+      if (searchResults == null) {
+        return [
+          { name: "No results found", id: "", description: "", global: false },
+        ];
+      }
+      return searchResults;
+    } else {
+      return state.serverSideCategories;
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -90,9 +136,21 @@ export default function CreateCategoriesComponent() {
           <Input
             className="join-item flex-grow"
             placeholder={"Search categories..."}
-            value={newCategoryInput}
-            onChange={(event) => setNewCategoryInput(event.currentTarget.value)}
+            value={searchInput}
+            onChange={(event) => {
+              setSearchInput(event.target.value);
+              search(event.target.value, searchOptions);
+            }}
           />
+          <Button
+            className="join-item"
+            disabled={searchInput == ""}
+            onClick={() => {
+              setSearchInput("");
+            }}
+          >
+            <FontAwesomeIcon icon={faX} />
+          </Button>
         </Join>
 
         {/* Create category input section */}
@@ -149,11 +207,7 @@ export default function CreateCategoriesComponent() {
             }
             onClick={async () => {
               resetState();
-              const serverResponse = await refetch();
-              setState((existingData) => ({
-                ...existingData,
-                serverSideCategories: serverResponse.data.category,
-              }));
+              await refetchAndUpdate();
             }}
           >
             <FontAwesomeIcon icon={faUndo} />
@@ -180,7 +234,7 @@ export default function CreateCategoriesComponent() {
                 ...existingData,
                 localCategories: [],
               }));
-              await refetch();
+              await refetchAndUpdate();
             }}
           >
             <FontAwesomeIcon icon={faUpload} />
@@ -211,7 +265,7 @@ export default function CreateCategoriesComponent() {
               </Table.Head>
 
               <Table.Body>
-                {state.serverSideCategories.map((category) => (
+                {getTableData().map((category) => (
                   <Table.Row>
                     <span>{category.name}</span>
                     <span>{category.id}</span>
@@ -235,7 +289,7 @@ export default function CreateCategoriesComponent() {
                                 id: category.id,
                               },
                             });
-                            await refetch();
+                            await refetchAndUpdate();
                           }}
                         >
                           <FontAwesomeIcon icon={faTrash} />
@@ -247,8 +301,17 @@ export default function CreateCategoriesComponent() {
               </Table.Body>
             </Table>
 
+            {/* Handle empty search */}
+            {searchInput != "" &&
+              (searchResults == null || searchResults.length == 0) &&
+              state.serverSideCategories.length != 0 && (
+                <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+                  No results found for "{searchInput}". Try a different search.
+                </div>
+              )}
+
             {/* Handle loading and error states */}
-            {loading && state.serverSideCategories.length == 0 && (
+            {state.serverSideCategories.length == 0 && (
               <div className="flex flex-grow w-full justify-center items-center bg-base-300">
                 Loading...
               </div>
