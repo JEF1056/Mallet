@@ -4,6 +4,7 @@ import {
   Divider,
   Input,
   Join,
+  Modal,
   Table,
   Tooltip,
 } from "react-daisyui";
@@ -20,7 +21,7 @@ import {
   faUpload,
   faX,
 } from "@fortawesome/free-solid-svg-icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useMiniSearch } from "react-minisearch";
 import { SearchOptions } from "minisearch";
@@ -63,6 +64,18 @@ export default function CreateCategoriesComponent() {
     boost: { name: 2 },
     fuzzy: 0.2,
   };
+
+  const [deleteModalCategoryInfo, setDeleteModalCategoryInfo] = useState<
+    | {
+        name: string;
+        id: string;
+      }
+    | undefined
+  >();
+  const modalRef = useRef<HTMLDialogElement>(null);
+  const showConfirmModal = useCallback(() => {
+    modalRef.current?.showModal();
+  }, [modalRef]);
 
   const [newCategoryInput, setNewCategoryInput] = useState("");
 
@@ -125,6 +138,37 @@ export default function CreateCategoriesComponent() {
 
   return (
     <div className="flex flex-col gap-4">
+      <Modal backdrop ref={modalRef}>
+        <Modal.Header className="font-bold">Are you sure?</Modal.Header>
+        <Modal.Body className="flex flex-col gap-2">
+          <p>
+            Deleting this category will remove it from the server and all
+            associated projects. This action cannot be undone.
+          </p>
+          <p className="text-warning">
+            Category: {deleteModalCategoryInfo?.name}
+          </p>
+        </Modal.Body>
+        <Modal.Actions>
+          <Button
+            color="primary"
+            onClick={async () => {
+              await deleteServerCategory({
+                variables: {
+                  id: deleteModalCategoryInfo?.id,
+                },
+              });
+              await refetchAndUpdate();
+              modalRef.current?.close();
+            }}
+          >
+            Delete
+          </Button>
+          <Button color="error" onClick={() => modalRef.current?.close()}>
+            Cancel
+          </Button>
+        </Modal.Actions>
+      </Modal>
       <div className="flex flex-row gap-2 rounded-top items-center">
         {/* Header and controls */}
         <label className="flex text-lg px-4 rounded-box bg-base-200 font-bold h-full items-center text-nowrap">
@@ -205,9 +249,9 @@ export default function CreateCategoriesComponent() {
               state.localCategories.length == 0 &&
               state.serverSideCategories.length == 0
             }
-            onClick={async () => {
+            onClick={() => {
               resetState();
-              await refetchAndUpdate();
+              refetchAndUpdate();
             }}
           >
             <FontAwesomeIcon icon={faUndo} />
@@ -234,7 +278,7 @@ export default function CreateCategoriesComponent() {
                 ...existingData,
                 localCategories: [],
               }));
-              await refetchAndUpdate();
+              refetchAndUpdate();
             }}
           >
             <FontAwesomeIcon icon={faUpload} />
@@ -278,23 +322,19 @@ export default function CreateCategoriesComponent() {
                       )}
                     </span>
                     <span>
-                      {/* Only global categories can be deleted */}
-                      {category.global && (
-                        <Button
-                          size="sm"
-                          color="error"
-                          onClick={async () => {
-                            await deleteServerCategory({
-                              variables: {
-                                id: category.id,
-                              },
-                            });
-                            await refetchAndUpdate();
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        color="error"
+                        onClick={async () => {
+                          setDeleteModalCategoryInfo({
+                            id: category.id,
+                            name: category.name,
+                          });
+                          showConfirmModal();
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </Button>
                     </span>
                   </Table.Row>
                 ))}
