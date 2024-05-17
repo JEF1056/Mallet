@@ -350,10 +350,17 @@ export default function CreateCategoriesComponent() {
                 </div>
               )}
 
-            {/* Handle loading and error states */}
-            {state.serverSideCategories.length == 0 && (
+            {/* Handle loading state */}
+            {state.serverSideCategories.length == 0 && loading && (
               <div className="flex flex-grow w-full justify-center items-center bg-base-300">
                 Loading...
+              </div>
+            )}
+
+            {/* Handle empty state */}
+            {state.serverSideCategories.length == 0 && !loading && (
+              <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+                No categories found. Add some!
               </div>
             )}
           </div>

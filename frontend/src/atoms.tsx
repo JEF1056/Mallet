@@ -6,7 +6,6 @@ import {
   Project,
   ProjectInput,
 } from "./__generated__/resolvers-types";
-import MiniSearch from "minisearch";
 
 const { persistAtom } = recoilPersist();
 
