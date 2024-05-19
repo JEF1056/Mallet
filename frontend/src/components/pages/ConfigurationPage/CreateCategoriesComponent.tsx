@@ -95,7 +95,7 @@ export default function CreateCategoriesComponent() {
   const [setServerCategories] = useMutation(setCategoriesGql); // { data, loading, error }] =
   const [deleteServerCategory] = useMutation(deleteCategoryGql);
   const { loading, error, data, refetch } = useQuery(getCategoryGql, {
-    pollInterval: 5000, // Poll every 5 seconds
+    pollInterval: 1000 * 60, // Poll every minute
     notifyOnNetworkStatusChange: true,
   });
 

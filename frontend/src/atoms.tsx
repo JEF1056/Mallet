@@ -16,6 +16,8 @@ export const createProjectsComponentState = atom<{
   page: number;
   serverSideProjects: Project[];
   localProjects: ProjectInput[];
+  uniqueCategories: string[];
+  editingServerData: boolean;
 }>({
   key: "createProjectsComponentState",
   effects_UNSTABLE: [persistAtom],
@@ -26,6 +28,8 @@ export const createProjectsComponentState = atom<{
     page: 1,
     localProjects: [],
     serverSideProjects: [],
+    uniqueCategories: [],
+    editingServerData: false,
   },
 });
 
