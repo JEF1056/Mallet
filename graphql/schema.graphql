@@ -58,10 +58,12 @@ input ProfileInput {
 }
 
 input ProjectInput {
-  name: String!
+  name: String
   description: String
-  url: String!
-  categories: [String!]!
+  url: String
+  categories: [String!]
+  noShow: Boolean
+  locationNumber: Int
 }
 
 input CategoryInput {
@@ -79,7 +81,8 @@ type Query {
 }
 
 type Mutation {
-  setProjects(projects: [ProjectInput!]!): [Project]
+  createProjects(projects: [ProjectInput!]!): [Project]
+  updateProject(id: ID!, project: ProjectInput!): Project
   clearProjects: Int
 
   setCategories(categories: [CategoryInput!]!): [Category]

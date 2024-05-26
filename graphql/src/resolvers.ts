@@ -5,9 +5,10 @@ import { createJudge, resolveJudge } from "./database/accessors/judge";
 import { withFilter } from "graphql-subscriptions";
 import {
   clearProjects,
-  setProjects,
   resolveProject,
   resolveProjectRankingsForCategory,
+  createProjects,
+  updateProject,
 } from "./database/accessors/project";
 import {
   deleteCategory,
@@ -43,7 +44,9 @@ export const resolvers = {
     rankedProjects: resolveProjectRankingsForCategory,
   },
   Mutation: {
-    setProjects: setProjects,
+    createProjects: createProjects,
+    updateProject: updateProject,
+
     createJudge: createJudge,
     setCategories: setCategories,
     deleteCategory: deleteCategory,

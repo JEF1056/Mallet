@@ -31,10 +31,11 @@ import {
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { useMiniSearch } from "react-minisearch";
 import { SearchOptions } from "minisearch";
+import { useNavigate } from "react-router-dom";
 
-const setStateGql = gql`
-  mutation SetProjects($projects: [ProjectInput!]!) {
-    setProjects(projects: $projects) {
+const createProjectsGql = gql`
+  mutation CreateProjects($projects: [ProjectInput!]!) {
+    createProjects(projects: $projects) {
       id
       name
       description
@@ -64,16 +65,48 @@ const setStateGql = gql`
   }
 `;
 
-const deleteProjectGql = gql`
-  mutation DeleteProject($id: ID!) {
-    deleteProjectId(id: $id) {
+const updateProjectGql = gql`
+  mutation UpdateProject($id: ID!, $project: ProjectInput!) {
+    updateProject(id: $id, project: $project) {
       id
       name
       description
-      global
+      url
+      categories {
+        id
+        name
+        description
+      }
+      assignedJudges {
+        profile {
+          name
+          profilePictureUrl
+        }
+        id
+      }
+      beingJudgedBy {
+        profile {
+          name
+          profilePictureUrl
+        }
+        id
+      }
+      locationNumber
+      noShow
     }
   }
 `;
+
+// const deleteProjectGql = gql`
+//   mutation DeleteProject($id: ID!) {
+//     deleteProjectId(id: $id) {
+//       id
+//       name
+//       description
+//       global
+//     }
+//   }
+// `;
 
 const getProjectGql = gql`
   query GetProjects($ids: [ID!]) {
@@ -115,6 +148,8 @@ export default function CreateProjectsComponent() {
     fuzzy: 0.3,
   };
 
+  const navigate = useNavigate();
+
   const [isLoading, setIsLoading] = useState(false);
   const [missingColumns, setMissingColumns] = useState<string[]>([]);
   const [state, setState] = useRecoilState(createProjectsComponentState);
@@ -148,7 +183,8 @@ export default function CreateProjectsComponent() {
     }
   );
 
-  const [setServerProjects] = useMutation(setStateGql);
+  const [createServerProjects] = useMutation(createProjectsGql);
+  const [updateServerProjects] = useMutation(updateProjectGql);
   const { data, refetch } = useQuery(getProjectGql, {
     pollInterval: 1000 * 60, // Poll every minute
     notifyOnNetworkStatusChange: true,
@@ -370,7 +406,9 @@ export default function CreateProjectsComponent() {
             <FontAwesomeIcon icon={faLaptop} />
           </label>
           <Toggle
-            disabled={state.serverSideProjects.length == 0}
+            disabled={
+              state.serverSideProjects && state.serverSideProjects.length == 0
+            }
             checked={state.editingServerData}
             onClick={() => {
               setState((existingData) => ({
@@ -435,7 +473,7 @@ export default function CreateProjectsComponent() {
 
                 setIsLoading(true);
 
-                const createdProjects = await setServerProjects({
+                const createdProjects = await createServerProjects({
                   variables: {
                     projects: state.localProjects,
                   },
@@ -450,7 +488,7 @@ export default function CreateProjectsComponent() {
 
                 setState((existingData) => ({
                   ...existingData,
-                  serverSideProjects: createdProjects.data.setProjects,
+                  serverSideProjects: createdProjects.data.createProjects,
                   editingServerData: true,
                 }));
 
@@ -631,13 +669,45 @@ export default function CreateProjectsComponent() {
             {!isLoading &&
               getTableData().map((project, index: number) => (
                 <Table.Row hover={true} key={index}>
-                  <span>{project.name}</span>
+                  <span onClick={() => navigate(`/project/${project.id}`)}>
+                    {project.name}
+                  </span>
                   <span>
                     {project.locationNumber ? project.locationNumber : "-"}
                   </span>
-                  <span>{project.id}</span>
+                  <span onClick={() => navigate(`/project/${project.id}`)}>
+                    {project.id}
+                  </span>
                   <span>
-                    <Toggle checked={project.noShow} />
+                    <Toggle
+                      checked={project.noShow}
+                      onChange={async () => {
+                        const updatedProject = await updateServerProjects({
+                          variables: {
+                            id: project.id,
+                            project: {
+                              noShow: !project.noShow,
+                            },
+                          },
+                        });
+
+                        if (updatedProject.errors) {
+                          console.error(updatedProject.errors);
+                          return;
+                        }
+
+                        setState((existingData) => ({
+                          ...existingData,
+                          serverSideProjects:
+                            existingData.serverSideProjects.map(
+                              (serverProject: any) =>
+                                serverProject.id == project.id
+                                  ? updatedProject.data.updateProject
+                                  : serverProject
+                            ),
+                        }));
+                      }}
+                    />
                   </span>
                   <span>
                     {project.url ? (

@@ -3,6 +3,7 @@ import ConfigurationPage from "./components/pages/ConfigurationPage/Configuratio
 // import { Avatar } from "react-daisyui";
 // import { useQuery, gql } from "@apollo/client";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import ProjectDetailPage from "./components/pages/ProjectDetailPage/ProjectDetailPage";
 
 export default function App() {
   return (
@@ -12,8 +13,8 @@ export default function App() {
 
         <Routes>
           <Route path="/configuration" element={<ConfigurationPage />} />
-          <Route path="/topics" element={<></>} />
-          <Route path="/" element={<></>} />
+          <Route path="/project/:id" element={<ProjectDetailPage />} />
+          <Route path="*" element={"404 not found"} />
         </Routes>
       </Router>
     </div>

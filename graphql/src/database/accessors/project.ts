@@ -2,10 +2,11 @@ import { ID } from "graphql-ws";
 import { prisma } from "../db";
 import {
   Project,
-  MutationSetProjectsArgs,
+  MutationCreateProjectsArgs,
   ScoredProject,
   Category,
   Judge,
+  MutationUpdateProjectArgs,
 } from "../../__generated__/resolvers-types";
 import { v4 as uuidv4 } from "uuid";
 import { resolveCategory, setCategories } from "./category";
@@ -81,12 +82,12 @@ export async function resolveProject(
     noShow: project.noShow,
   }));
 
-  return projects;
+  return projects.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function setProjects(
+export async function createProjects(
   _,
-  args: MutationSetProjectsArgs
+  args: MutationCreateProjectsArgs
 ): Promise<Project[]> {
   console.info(`Creating ${args.projects.length} projects`);
   let projectIds: string[] = [];
@@ -178,6 +179,35 @@ export async function setProjects(
   pubsub.publish("PROJECTS_UPDATED", { projects: resolvedProjects });
 
   return resolvedProjects;
+}
+
+export async function updateProject(
+  _,
+  args: MutationUpdateProjectArgs
+): Promise<Project> {
+  console.info(`Updating project ${args.id}`);
+
+  await prisma.project.update({
+    where: {
+      id: args.id,
+    },
+    data: {
+      name: args.project.name,
+      description: args.project.description,
+      url: args.project.url,
+      locationNumber: args.project.locationNumber,
+      noShow: args.project.noShow,
+    },
+  });
+
+  const resolvedProject = await resolveProject(
+    1,
+    { ids: [args.id] },
+    null,
+    null
+  );
+
+  return resolvedProject[0];
 }
 
 export async function clearProjects() {
