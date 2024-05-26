@@ -61,7 +61,7 @@ input ProjectInput {
   name: String!
   description: String
   url: String!
-  categoryIds: [ID!]!
+  categories: [String!]!
 }
 
 input CategoryInput {

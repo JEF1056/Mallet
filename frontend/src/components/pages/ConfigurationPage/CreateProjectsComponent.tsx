@@ -7,16 +7,14 @@ import {
   Join,
   Link,
   Pagination,
+  Skeleton,
   Table,
   Toggle,
   Tooltip,
 } from "react-daisyui";
 import Papa from "papaparse";
 import { useRecoilState, useResetRecoilState } from "recoil";
-import {
-  createCategoriesComponentState,
-  createProjectsComponentState,
-} from "../../../atoms";
+import { createProjectsComponentState } from "../../../atoms";
 import { truncate } from "../../../helpers/csv";
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -25,41 +23,57 @@ import {
   faAnglesRight,
   faUpload,
   faUndo,
-  faTriangleExclamation,
   faCloud,
   faLaptop,
   faX,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { gql, useQuery } from "@apollo/client";
-// import { useMiniSearch } from "react-minisearch";
+import { gql, useMutation, useQuery } from "@apollo/client";
+import { useMiniSearch } from "react-minisearch";
+import { SearchOptions } from "minisearch";
 
-// const setProjectsGql = gql`
-//   mutation SetProjects($projects: [ProjectInput!]!) {
-//     setProjects(projects: $projects) {
-//       id
-//       name
-//       description
-//       url
-//       locationNumber
-//       categories {
-//         id
-//         name
-//         description
-//       }
-//     }
-//   }
-// `;
+const setStateGql = gql`
+  mutation SetProjects($projects: [ProjectInput!]!) {
+    setProjects(projects: $projects) {
+      id
+      name
+      description
+      url
+      categories {
+        id
+        name
+        description
+      }
+      assignedJudges {
+        profile {
+          name
+          profilePictureUrl
+        }
+        id
+      }
+      beingJudgedBy {
+        profile {
+          name
+          profilePictureUrl
+        }
+        id
+      }
+      locationNumber
+      noShow
+    }
+  }
+`;
 
-// const deleteProjectGql = gql`
-//   mutation DeleteCategory($id: ID!) {
-//     deleteCategory(id: $id) {
-//       id
-//       name
-//       description
-//       global
-//     }
-//   }
-// `;
+const deleteProjectGql = gql`
+  mutation DeleteProject($id: ID!) {
+    deleteProjectId(id: $id) {
+      id
+      name
+      description
+      global
+    }
+  }
+`;
 
 const getProjectGql = gql`
   query GetProjects($ids: [ID!]) {
@@ -96,29 +110,45 @@ const getProjectGql = gql`
 export default function CreateProjectsComponent() {
   const pageSize = 10;
   const selectableColumnTypes = ["Name", "Url", "Categories", "Description"];
+  const searchOptions: SearchOptions = {
+    boost: { name: 2 },
+    fuzzy: 0.3,
+  };
 
+  const [isLoading, setIsLoading] = useState(false);
   const [missingColumns, setMissingColumns] = useState<string[]>([]);
-  const [projects, setProjects] = useRecoilState(createProjectsComponentState);
-  const [categories, setCategories] = useRecoilState(
-    createCategoriesComponentState
-  );
-  const resetProjects = useResetRecoilState(createProjectsComponentState);
-  const allCategoriesAreUploaded = projects.uniqueCategories.every((name) =>
-    categories.serverSideCategories
-      .map((category) => category.name)
-      .includes(name)
-  );
+  const [state, setState] = useRecoilState(createProjectsComponentState);
+  const resetState = useResetRecoilState(createProjectsComponentState);
 
   const [searchInput, setSearchInput] = useState("");
-  //   const { search, searchResults, addAll, removeAll } = useMiniSearch(
-  //     projects.serverSideProjects,
-  //     {
-  //       fields: ["name", "description", "id"],
-  //       storeFields: ["name", "description", "id", "global"],
-  //       tokenize: (string) => string.split(/[\s-]+/),
-  //     }
-  //   );
+  const { search, searchResults, addAll, removeAll } = useMiniSearch(
+    state.serverSideProjects,
+    {
+      fields: [
+        "id",
+        "name",
+        "description",
+        "categories",
+        "url",
+        "assignedJudges",
+        "beingJudgedBy",
+      ],
+      storeFields: [
+        "id",
+        "name",
+        "description",
+        "categories",
+        "locationNumber",
+        "noShow",
+        "url",
+        "assignedJudges",
+        "beingJudgedBy",
+      ],
+      tokenize: (string) => string.split(/[\s-]+/),
+    }
+  );
 
+  const [setServerProjects] = useMutation(setStateGql);
   const { data, refetch } = useQuery(getProjectGql, {
     pollInterval: 1000 * 60, // Poll every minute
     notifyOnNetworkStatusChange: true,
@@ -128,13 +158,13 @@ export default function CreateProjectsComponent() {
     // If new data is available, update list of server-side projects
     if (data) {
       console.log("got projects:", data);
-      setProjects((existingData) => ({
+      setState((existingData) => ({
         ...existingData,
         serverSideProjects: data.project,
       }));
-      //   removeAll();
-      //   addAll(data.category);
-      //   search(searchInput, searchOptions);
+      removeAll();
+      addAll(data.project);
+      search(searchInput, searchOptions);
     }
   }, [data]);
 
@@ -142,44 +172,44 @@ export default function CreateProjectsComponent() {
     // Update state that detects missing columns
     setMissingColumns(
       selectableColumnTypes.filter(
-        (columnTypes) => !projects.argToColumnName[columnTypes]
+        (columnTypes) => !state.argToColumnName[columnTypes]
       )
     );
 
     // If input data from csv is available and all selectableColumnTypes have pairs in
     // argToColumnName, update localProjects (input data to server)
     if (
-      projects.inputData &&
+      state.inputData &&
       selectableColumnTypes.every((columnType) =>
-        projects.argToColumnName.hasOwnProperty(columnType)
+        state.argToColumnName.hasOwnProperty(columnType)
       )
     ) {
       // Update local copy of projects
-      setProjects((existingData) => ({
+      setState((existingData) => ({
         ...existingData,
-        localProjects: projects.inputData.map((project: any) => {
-          const categories = project[projects.argToColumnName["Categories"]!]
+        localProjects: state.inputData.map((project: any) => {
+          const categories = project[state.argToColumnName["Categories"]!]
             ?.split(",")
             .map((category: string) => category.trim())
             .filter((category: string) => category);
 
           return {
-            name: project[projects.argToColumnName["Name"]!],
-            url: project[projects.argToColumnName["Url"]!],
-            description: project[projects.argToColumnName["Description"]!],
+            name: project[state.argToColumnName["Name"]!],
+            url: project[state.argToColumnName["Url"]!],
+            // description: project[state.argToColumnName["Description"]!], // Descriptions are currently too large and are optional. If we implement batch uploading in ther future we can add this back.
             categories: categories,
           };
         }),
       }));
     }
-  }, [projects.argToColumnName, projects.inputData]);
+  }, [state.argToColumnName, state.inputData]);
 
   function getProjectRow(project: any, index: number) {
-    const columns = [<span>{index + 1 + (projects.page - 1) * pageSize}</span>];
+    const columns = [<span>{index + 1 + (state.page - 1) * pageSize}</span>];
 
     for (const columnName of getOrderedProjectColumnNames()) {
       const value: string = project[columnName];
-      const column_mapping_type = projects.columnNameToArg[columnName];
+      const column_mapping_type = state.columnNameToArg[columnName];
 
       if (column_mapping_type == "Categories") {
         columns.push(
@@ -220,13 +250,13 @@ export default function CreateProjectsComponent() {
     const orderedColumnNames = [];
 
     for (const columnType of selectableColumnTypes) {
-      const columnName = projects.argToColumnName[columnType];
+      const columnName = state.argToColumnName[columnType];
       if (columnName) {
         orderedColumnNames.push(columnName);
       }
     }
 
-    for (const columnName of Object.keys(projects.inputData[0])) {
+    for (const columnName of Object.keys(state.inputData[0])) {
       if (!orderedColumnNames.includes(columnName)) {
         orderedColumnNames.push(columnName);
       }
@@ -235,15 +265,28 @@ export default function CreateProjectsComponent() {
     return orderedColumnNames;
   }
 
+  function getTableData() {
+    if (searchInput) {
+      if (searchResults == null) {
+        return [];
+      }
+      return searchResults;
+    } else {
+      return state.serverSideProjects;
+    }
+  }
+
   async function refetchAndUpdate() {
+    setIsLoading(true);
     const serverResponse = await refetch();
-    setProjects((existingData) => ({
+    setState((existingData) => ({
       ...existingData,
       serverSideProjects: serverResponse.data.project,
     }));
-    // removeAll();
-    // addAll(serverResponse.data.category);
-    // search(searchInput, searchOptions);
+    removeAll();
+    addAll(serverResponse.data.project);
+    search(searchInput, searchOptions);
+    setIsLoading(false);
   }
 
   return (
@@ -255,7 +298,7 @@ export default function CreateProjectsComponent() {
         </label>
 
         {/* Search bar */}
-        {projects.editingServerData && (
+        {state.editingServerData && (
           <Join className="flex-grow">
             <Input
               className="join-item flex-grow"
@@ -263,7 +306,7 @@ export default function CreateProjectsComponent() {
               value={searchInput}
               onChange={(event) => {
                 setSearchInput(event.target.value);
-                //   search(event.target.value, searchOptions);
+                search(event.target.value, searchOptions);
               }}
             />
             <Button
@@ -280,7 +323,7 @@ export default function CreateProjectsComponent() {
 
         {/* File input */}
         <FileInput
-          className={projects.editingServerData ? "flex-shrink" : "flex-grow"}
+          className={state.editingServerData ? "flex-shrink" : "flex-grow"}
           accept=".csv"
           onChange={(event) => {
             if (event.target.files && event.target.files.length > 0) {
@@ -291,18 +334,18 @@ export default function CreateProjectsComponent() {
                   // If the new column names differ, reset.
                   // TODO: this does not actually work as expected, analways resets
                   if (
-                    projects.inputData &&
+                    state.inputData &&
                     Object.keys(result.data[0]) !=
-                      Object.keys(projects.inputData[0])
+                      Object.keys(state.inputData[0])
                   ) {
                     console.log(
                       Object.keys(result.data[0]),
-                      Object.keys(projects.inputData[0])
+                      Object.keys(state.inputData[0])
                     );
-                    resetProjects();
+                    resetState();
                     refetchAndUpdate();
                   }
-                  setProjects((project) => ({
+                  setState((project) => ({
                     ...project,
                     inputData: result.data,
                     editingServerData: false,
@@ -316,7 +359,7 @@ export default function CreateProjectsComponent() {
         {/* Toggle for switching between views */}
         <Tooltip
           message={
-            projects.editingServerData
+            state.editingServerData
               ? "Editing server-side data"
               : "Uploading local csv data"
           }
@@ -327,10 +370,10 @@ export default function CreateProjectsComponent() {
             <FontAwesomeIcon icon={faLaptop} />
           </label>
           <Toggle
-            // disabled={projects.serverSideProjects.length == 0}
-            checked={projects.editingServerData}
+            disabled={state.serverSideProjects.length == 0}
+            checked={state.editingServerData}
             onClick={() => {
-              setProjects((existingData) => ({
+              setState((existingData) => ({
                 ...existingData,
                 editingServerData: !existingData.editingServerData,
               }));
@@ -342,8 +385,8 @@ export default function CreateProjectsComponent() {
         </Tooltip>
 
         {/* Reset button */}
-        {((projects.inputData && !projects.editingServerData) ||
-          (projects.editingServerData && projects.serverSideProjects)) && (
+        {((state.inputData && !state.editingServerData) ||
+          (state.editingServerData && state.serverSideProjects)) && (
           <Tooltip
             message="Reset local copy of  and refetch server data"
             position="left"
@@ -351,8 +394,20 @@ export default function CreateProjectsComponent() {
             <Button
               color="error"
               onClick={() => {
-                if (!projects.serverSideProjects) {
-                  resetProjects();
+                if (!state.serverSideProjects) {
+                  resetState();
+                } else {
+                  setState((existingData) => ({
+                    ...existingData,
+                    inputData: null,
+                    columnNameToArg: {},
+                    argToColumnName: {},
+                    page: 1,
+                    localProjects: [],
+                    uniqueCategories: [],
+                    editingServerData:
+                      existingData.serverSideProjects.length > 0,
+                  }));
                 }
                 refetchAndUpdate();
               }}
@@ -363,21 +418,43 @@ export default function CreateProjectsComponent() {
         )}
 
         {/* Upload button */}
-        {projects.inputData && !projects.editingServerData && (
+        {state.inputData && !state.editingServerData && (
           <Tooltip
             message="Create / update project and non-global category information on the server"
             position="left"
           >
             <Button
               color="info"
-              disabled={missingColumns.length > 0 || !allCategoriesAreUploaded}
+              disabled={missingColumns.length > 0}
               // TODO: Implement upload functionality
-              onClick={() => {
-                console.log(projects.localProjects);
-                setProjects((existingData) => ({
+              onClick={async () => {
+                setState((existingData) => ({
                   ...existingData,
                   editingServerData: true,
                 }));
+
+                setIsLoading(true);
+
+                const createdProjects = await setServerProjects({
+                  variables: {
+                    projects: state.localProjects,
+                  },
+                });
+
+                console.log("created projects:", createdProjects);
+
+                if (createdProjects.errors) {
+                  console.error(createdProjects.errors);
+                  return;
+                }
+
+                setState((existingData) => ({
+                  ...existingData,
+                  serverSideProjects: createdProjects.data.setProjects,
+                  editingServerData: true,
+                }));
+
+                setIsLoading(false);
               }}
             >
               <FontAwesomeIcon icon={faUpload} />
@@ -387,7 +464,7 @@ export default function CreateProjectsComponent() {
       </div>
 
       {/* Local upload table */}
-      {projects.inputData && !projects.editingServerData && (
+      {state.inputData && !state.editingServerData && (
         <>
           <div className="overflow-x-auto no-scrollbar overflow-y-auto h-128 rounded-box">
             <Table pinRows size="sm" className="bg-base-300">
@@ -405,24 +482,22 @@ export default function CreateProjectsComponent() {
                     <Dropdown hover key={index} className="w-52">
                       <Dropdown.Toggle
                         className={
-                          projects.columnNameToArg[columnName]
-                            ? ""
-                            : "opacity-50"
+                          state.columnNameToArg[columnName] ? "" : "opacity-50"
                         }
                       >
-                        {projects.columnNameToArg[columnName] ||
+                        {state.columnNameToArg[columnName] ||
                           "Select Column Type"}
                       </Dropdown.Toggle>
                       <Dropdown.Menu className="w-52">
                         {selectableColumnTypes.map((columnType) => (
                           <Dropdown.Item
                             className={
-                              projects.columnNameToArg[columnName] == columnType
+                              state.columnNameToArg[columnName] == columnType
                                 ? "bg-secondary text-secondary-content hover:text-neutral-content"
                                 : ""
                             }
                             onClick={() => {
-                              setProjects((existingData) => ({
+                              setState((existingData) => ({
                                 ...existingData,
                                 columnNameToArg: {
                                   ...existingData.columnNameToArg,
@@ -441,7 +516,7 @@ export default function CreateProjectsComponent() {
                               if (columnType == "Categories") {
                                 const categories: string[] = Array.from(
                                   new Set(
-                                    projects.inputData.flatMap((row: any) => {
+                                    state.inputData.flatMap((row: any) => {
                                       return row[columnName]
                                         ?.split(",")
                                         .map((category: string) =>
@@ -452,30 +527,10 @@ export default function CreateProjectsComponent() {
                                   )
                                 );
 
-                                setProjects((existingData) => ({
+                                setState((existingData) => ({
                                   ...existingData,
                                   uniqueCategories: categories,
                                 }));
-
-                                setCategories((existingData) => {
-                                  const globalCategories =
-                                    existingData.localCategories.filter(
-                                      (category) => category.global
-                                    );
-
-                                  return {
-                                    ...existingData,
-                                    localCategories: [
-                                      ...categories.map((category) => ({
-                                        name: category,
-                                        global: false,
-                                      })),
-                                      ...globalCategories,
-                                    ].sort((a, b) =>
-                                      a.name.localeCompare(b.name)
-                                    ),
-                                  };
-                                });
                               }
                             }}
                           >
@@ -489,10 +544,10 @@ export default function CreateProjectsComponent() {
               </Table.Head>
 
               <Table.Body>
-                {projects.inputData
+                {state.inputData
                   .slice(
-                    projects.page * pageSize - pageSize,
-                    pageSize * projects.page
+                    state.page * pageSize - pageSize,
+                    pageSize * state.page
                   )
                   .map((project: any, index: number) => (
                     <Table.Row hover={true} key={index}>
@@ -506,17 +561,8 @@ export default function CreateProjectsComponent() {
           <div className="flex flex-grow justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge color="primary">
-                Project Count: {projects.inputData.length}
+                Project Count: {state.inputData.length}
               </Badge>
-              {!allCategoriesAreUploaded && (
-                <Badge color="warning">
-                  <FontAwesomeIcon
-                    icon={faTriangleExclamation}
-                    className="pr-1"
-                  />{" "}
-                  Project categories do not match server-side categories
-                </Badge>
-              )}
               {missingColumns.length > 0 ? (
                 <Badge color="warning">{`Missing columns: ${missingColumns.join(
                   ", "
@@ -526,14 +572,14 @@ export default function CreateProjectsComponent() {
               )}
             </div>
 
-            {projects.inputData.length > pageSize && (
+            {state.inputData.length > pageSize && (
               <Pagination className="bg-base-300 justify-self-end">
                 <Button
                   className="join-item"
-                  active={projects.page != 1}
-                  disabled={projects.page == 1}
+                  active={state.page != 1}
+                  disabled={state.page == 1}
                   onClick={() =>
-                    setProjects((existingData) => ({
+                    setState((existingData) => ({
                       ...existingData,
                       page: existingData.page - 1,
                     }))
@@ -542,18 +588,16 @@ export default function CreateProjectsComponent() {
                   <FontAwesomeIcon icon={faAnglesLeft} />
                 </Button>
                 <Button className="join-item" disabled>
-                  {`Page ${projects.page} of ${Math.ceil(
-                    projects.inputData.length / pageSize
+                  {`Page ${state.page} of ${Math.ceil(
+                    state.inputData.length / pageSize
                   )}`}
                 </Button>
                 <Button
                   className="join-item"
-                  active={projects.page < projects.inputData.length / pageSize}
-                  disabled={
-                    projects.page >= projects.inputData.length / pageSize
-                  }
+                  active={state.page < state.inputData.length / pageSize}
+                  disabled={state.page >= state.inputData.length / pageSize}
                   onClick={() =>
-                    setProjects((existingData) => ({
+                    setState((existingData) => ({
                       ...existingData,
                       page: existingData.page + 1,
                     }))
@@ -568,59 +612,78 @@ export default function CreateProjectsComponent() {
       )}
 
       {/* Server-side data table */}
-      {projects.editingServerData && projects.serverSideProjects && (
-        <div className="overflow-x-auto no-scrollbar overflow-y-auto h-128 rounded-box">
+      {state.editingServerData && state.serverSideProjects && (
+        <div className="flex overflow-x-auto no-scrollbar overflow-y-auto h-128 rounded-box flex-col">
           <Table pinRows size="sm" className="bg-base-300">
             <Table.Head>
               <span>Name</span>
               <span>Location Number</span>
+              <span>ID</span>
               <span>No Show</span>
               <span>Devpost Url</span>
               <span>Description</span>
               <span>Categories</span>
               <span>Assigned Judges</span>
               <span>Being Judged By</span>
+              <span></span>
             </Table.Head>
 
-            {projects.serverSideProjects.map((project, index: number) => (
-              <Table.Row hover={true} key={index}>
-                <span>{project.name}</span>
-                <span>
-                  {project.locationNumber ? project.locationNumber : "-"}
-                </span>
-                <span>
-                  <Toggle checked={project.noShow} />
-                </span>
-                <span>
-                  {project.url ? (
-                    <Link target="_blank" href={project.url}>
-                      {project.url}
-                    </Link>
-                  ) : (
-                    "-"
-                  )}
-                </span>
-                <span>{project.description ? project.description : "-"}</span>
-                <span className="flex flex-wrap min-w-96 gap-1">
-                  {project.categories.map((category: any) => (
-                    <Badge>{category.name}</Badge>
-                  ))}
-                </span>
-                <span className="flex flex-wrap min-w-96 gap-1">
-                  {project.assignedJudges.length
-                    ? project.assignedJudges.map((judge: any) => (
-                        <Badge>{judge.profile.name}</Badge>
-                      ))
-                    : "No judges assigned"}
-                </span>
-                <span className="flex flex-wrap min-w-96 gap-1">
-                  {project.beingJudgedBy.map((judge: any) => (
-                    <Badge>{judge.profile.name}</Badge>
-                  ))}
-                </span>
-              </Table.Row>
-            ))}
+            {!isLoading &&
+              getTableData().map((project, index: number) => (
+                <Table.Row hover={true} key={index}>
+                  <span>{project.name}</span>
+                  <span>
+                    {project.locationNumber ? project.locationNumber : "-"}
+                  </span>
+                  <span>{project.id}</span>
+                  <span>
+                    <Toggle checked={project.noShow} />
+                  </span>
+                  <span>
+                    {project.url ? (
+                      <Link target="_blank" href={project.url}>
+                        {project.url}
+                      </Link>
+                    ) : (
+                      "-"
+                    )}
+                  </span>
+                  <span>{project.description ? project.description : "-"}</span>
+                  <span className="flex flex-wrap min-w-96 gap-1">
+                    {project.categories.map((category: any) => (
+                      <Badge>{category.name}</Badge>
+                    ))}
+                  </span>
+                  <span className="flex flex-wrap min-w-96 gap-1">
+                    {project.assignedJudges.length
+                      ? project.assignedJudges.map((judge: any) => (
+                          <Badge>{judge.profile.name}</Badge>
+                        ))
+                      : "No judges assigned"}
+                  </span>
+                  <span className="flex flex-wrap min-w-96 gap-1">
+                    {project.beingJudgedBy.map((judge: any) => (
+                      <Badge>{judge.profile.name}</Badge>
+                    ))}
+                  </span>
+                  <span>
+                    <Button color="error">
+                      <FontAwesomeIcon icon={faTrash} />
+                    </Button>
+                  </span>
+                </Table.Row>
+              ))}
           </Table>
+
+          {isLoading && (
+            <Skeleton className="flex flex-grow flex-col w-full rounded-t-none" />
+          )}
+
+          {searchInput && searchResults && searchResults.length == 0 && (
+            <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+              No results found for "{searchInput}". Try a different search.
+            </div>
+          )}
         </div>
       )}
     </div>

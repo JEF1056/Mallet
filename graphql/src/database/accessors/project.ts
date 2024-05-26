@@ -8,7 +8,7 @@ import {
   Judge,
 } from "../../__generated__/resolvers-types";
 import { v4 as uuidv4 } from "uuid";
-import { resolveCategory } from "./category";
+import { resolveCategory, setCategories } from "./category";
 import {
   batchResolveUniqueAndMap,
   findFirstNonContinuousNumber,
@@ -141,12 +141,20 @@ export async function setProjects(
         },
       });
 
+      // Create the categories if they don't exist
+      const fetchedCategories = await setCategories(null, {
+        categories: project.categories.map((category) => ({
+          name: category,
+          global: false,
+        })),
+      });
+
       await Promise.all(
-        project.categoryIds.map((categoryId) =>
+        fetchedCategories.map((category) =>
           tx.projectCategory.create({
             data: {
               projectId,
-              categoryId,
+              categoryId: category.id,
             },
           })
         )

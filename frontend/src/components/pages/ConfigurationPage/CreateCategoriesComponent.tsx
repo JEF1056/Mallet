@@ -62,7 +62,7 @@ const getCategoryGql = gql`
 export default function CreateCategoriesComponent() {
   const searchOptions: SearchOptions = {
     boost: { name: 2 },
-    fuzzy: 0.2,
+    fuzzy: 0.3,
   };
 
   const [deleteModalCategoryInfo, setDeleteModalCategoryInfo] = useState<
