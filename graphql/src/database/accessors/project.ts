@@ -73,6 +73,7 @@ export async function resolveProject(
     description: project.description,
     name: project.name,
     url: project.url,
+    locationNumber: project.locationNumber,
     beingJudgedBy: project.JudgeProjectVisits.map(
       (visit) => resolvedJudges[visit.judgeId]
     ).filter((element) => element !== undefined),
@@ -121,8 +122,6 @@ export async function createProjects(
             })
           ).map((location) => location.locationNumber)
         );
-
-        locationNumber = firstUnassignedNumber;
 
         await tx.project.create({
           data: {

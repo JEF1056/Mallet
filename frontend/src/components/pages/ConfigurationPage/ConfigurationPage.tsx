@@ -9,7 +9,7 @@ export default function ConfigurationPage() {
   const [ignoreScreenSize, setIgnoreScreenSize] = useState(false);
   const { width } = useWindowDimensions();
 
-  if (width < 1024 && !ignoreScreenSize) {
+  if (width < 950 && !ignoreScreenSize) {
     return <NoMobileComponent ignoreSetter={setIgnoreScreenSize} />;
   }
 

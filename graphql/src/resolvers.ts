@@ -58,5 +58,13 @@ export const resolvers = {
     uptime: {
       subscribe: () => pubsub.asyncIterator(["NUMBER_INCREMENTED"]),
     },
+    project: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(["PROJECT_UPDATED"]),
+        (payload, variables) => {
+          return payload.projectUpdated.id === variables.id;
+        }
+      ),
+    },
   },
 };

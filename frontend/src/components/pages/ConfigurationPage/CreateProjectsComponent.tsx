@@ -144,7 +144,7 @@ export default function CreateProjectsComponent() {
   const pageSize = 10;
   const selectableColumnTypes = ["Name", "Url", "Categories", "Description"];
   const searchOptions: SearchOptions = {
-    boost: { name: 2 },
+    boost: { name: 3, locationNumber: 2, categories: 1, description: 1 },
     fuzzy: 0.3,
   };
 
@@ -164,6 +164,7 @@ export default function CreateProjectsComponent() {
         "name",
         "description",
         "categories",
+        "locationNumber",
         "url",
         "assignedJudges",
         "beingJudgedBy",
@@ -721,7 +722,7 @@ export default function CreateProjectsComponent() {
                   <span>{project.description ? project.description : "-"}</span>
                   <span className="flex flex-wrap min-w-96 gap-1">
                     {project.categories.map((category: any) => (
-                      <Badge>{category.name}</Badge>
+                      <Badge>{truncate(category.name, 50, "...")}</Badge>
                     ))}
                   </span>
                   <span className="flex flex-wrap min-w-96 gap-1">
