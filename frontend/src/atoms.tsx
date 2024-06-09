@@ -6,8 +6,29 @@ import {
   Project,
   ProjectInput,
 } from "./__generated__/resolvers-types";
+import { EncryptStorage } from "encrypt-storage";
 
 const { persistAtom } = recoilPersist();
+const encryptStorage = new EncryptStorage("secret-key-value");
+
+const encryptStorageEmulated = () => {
+  return {
+    setItem: (key: string, value: string) => {
+      encryptStorage.setItem(key, value);
+    },
+    getItem: (key: string) => {
+      return encryptStorage.getItem(key);
+    },
+    clear: () => {
+      encryptStorage.clear();
+    },
+  };
+};
+
+const { persistAtom: encryptedPersistAtom } = recoilPersist({
+  key: "encrypted-persist",
+  storage: encryptStorageEmulated(),
+});
 
 export const createProjectsComponentState = atom<{
   inputData: any | null;
@@ -42,5 +63,17 @@ export const createCategoriesComponentState = atom<{
   default: {
     serverSideCategories: [],
     localCategories: [],
+  },
+});
+
+export const loginState = atom<{
+  username: string;
+  bearer: string;
+}>({
+  key: "loginState",
+  effects_UNSTABLE: [encryptedPersistAtom],
+  default: {
+    username: "",
+    bearer: "",
   },
 });

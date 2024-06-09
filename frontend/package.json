@@ -19,6 +19,7 @@
         "@fortawesome/free-solid-svg-icons": "^6.5.2",
         "@fortawesome/react-fontawesome": "^0.2.0",
         "@tailwindcss/typography": "^0.5.13",
+        "encrypt-storage": "^2.13.2",
         "graphql": "^16.8.1",
         "minisearch": "^6.3.0",
         "papaparse": "^5.4.1",

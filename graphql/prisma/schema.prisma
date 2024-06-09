@@ -54,6 +54,7 @@ model Judge {
     RatingRelationships     RatingRelationships[]
     JudgeProjectAssignments JudgeProjectAssignments[]
     JudgeProjectVisits      JudgeProjectVisits[]
+    auth                    auth[]
 }
 
 model JudgeProjectAssignments {
@@ -114,4 +115,16 @@ model BetterRating {
     betterProjectId String
 
     @@id([ratingId])
+}
+
+model auth {
+    id                 String    @id @default(uuid())
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
+    accessToken        String?
+    refreshToken       String?
+    accessTokenExpires DateTime?
+    authLevel          String
+    userId             String
+    user               Judge?    @relation(fields: [userId], references: [id])
 }
