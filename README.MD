@@ -25,9 +25,11 @@ docker-compose up --build --watch
 ```
 
 ### Production
+Follow the docker installation instructions [here](https://docs.docker.com/engine/install/)
 
-TBD
-Going command is:
+Then run the following command:
 ```
-docker-compose -f docker-compose.prod.yml up --build
+docker-compose -f docker-compose.prod.yml up --build -d
 ```
+
+Boom! You're done! Mallet is running in production mode on `localhost:3000`

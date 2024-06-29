@@ -1,15 +1,20 @@
 import fs from "fs";
 import path from "path";
-import { pubsub } from "./redis";
+import { pubsub } from "./pubsub";
 import { createJudge, resolveJudge } from "./database/accessors/judge";
 import { withFilter } from "graphql-subscriptions";
 import {
   clearProjects,
-  setProjects,
   resolveProject,
   resolveProjectRankingsForCategory,
+  createProjects,
+  updateProject,
 } from "./database/accessors/project";
-import { createCategory, resolveCategory } from "./database/accessors/category";
+import {
+  deleteCategory,
+  resolveCategory,
+  setCategories,
+} from "./database/accessors/category";
 import { resolveRating, setRating } from "./database/accessors/rating";
 
 let currentNumber = 0;
@@ -39,9 +44,12 @@ export const resolvers = {
     rankedProjects: resolveProjectRankingsForCategory,
   },
   Mutation: {
-    setProjects: setProjects,
+    createProjects: createProjects,
+    updateProject: updateProject,
+
     createJudge: createJudge,
-    createCategory: createCategory,
+    setCategories: setCategories,
+    deleteCategory: deleteCategory,
     setRating: setRating,
 
     clearProjects: clearProjects,
@@ -49,6 +57,14 @@ export const resolvers = {
   Subscription: {
     uptime: {
       subscribe: () => pubsub.asyncIterator(["NUMBER_INCREMENTED"]),
+    },
+    project: {
+      subscribe: withFilter(
+        () => pubsub.asyncIterator(["PROJECT_UPDATED"]),
+        (payload, variables) => {
+          return payload.projectUpdated.id === variables.id;
+        }
+      ),
     },
   },
 };

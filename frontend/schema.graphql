@@ -102,5 +102,4 @@ type Mutation {
 
 type Subscription {
   uptime: Int
-  project(id: ID!): Project
 }

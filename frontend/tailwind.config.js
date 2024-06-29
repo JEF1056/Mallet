@@ -7,7 +7,14 @@ export default {
     "node_modules/react-daisyui/dist/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      spacing: {
+        128: "32rem",
+      },
+    },
   },
-  plugins: [require("daisyui")],
+  daisyui: {
+    themes: ["dim"],
+  },
+  plugins: [require("@tailwindcss/typography"), require("daisyui")],
 };

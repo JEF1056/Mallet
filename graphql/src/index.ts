@@ -10,7 +10,6 @@ import { expressMiddleware } from "@apollo/server/express4";
 import { typeDefs, resolvers } from "./resolvers";
 import { prisma } from "./database/db";
 import { ApolloServerPluginLandingPageDisabled } from "@apollo/server/plugin/disabled";
-
 export interface GlobalContext {
   // You can optionally create a TS interface to set up types
   // for your contextValue
@@ -23,6 +22,8 @@ const schema = makeExecutableSchema({ typeDefs, resolvers });
 // Create an Express app and HTTP server; we will attach both the WebSocket
 // server and the ApolloServer to this HTTP server.
 const app = express();
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 const httpServer = createServer(app);
 
 // Create our WebSocket server using the HTTP server we just set up.

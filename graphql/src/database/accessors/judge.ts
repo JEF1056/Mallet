@@ -7,6 +7,7 @@ import {
 } from "../../__generated__/resolvers-types";
 import { batchResolveUniqueAndMap } from "../helpers";
 import { resolveProject } from "./project";
+import { pubsub } from "../../pubsub";
 
 export async function resolveJudge(
   depth: number | undefined,
@@ -75,6 +76,8 @@ export async function createJudge(
       profilePictureUrl: args.profile.profilePictureUrl,
     },
   });
+
+  pubsub.publish("JUDGE_CREATED", { judgeCreated: judge });
 
   return {
     id: judge.id,

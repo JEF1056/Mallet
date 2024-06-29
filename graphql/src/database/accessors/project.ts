@@ -2,18 +2,20 @@ import { ID } from "graphql-ws";
 import { prisma } from "../db";
 import {
   Project,
-  MutationSetProjectsArgs,
+  MutationCreateProjectsArgs,
   ScoredProject,
   Category,
   Judge,
+  MutationUpdateProjectArgs,
 } from "../../__generated__/resolvers-types";
 import { v4 as uuidv4 } from "uuid";
-import { resolveCategory } from "./category";
+import { resolveCategory, setCategories } from "./category";
 import {
   batchResolveUniqueAndMap,
   findFirstNonContinuousNumber,
 } from "../helpers";
 import { resolveJudge } from "./judge";
+import { pubsub } from "../../pubsub";
 
 export async function resolveProject(
   depth: number | undefined,
@@ -71,6 +73,7 @@ export async function resolveProject(
     description: project.description,
     name: project.name,
     url: project.url,
+    locationNumber: project.locationNumber,
     beingJudgedBy: project.JudgeProjectVisits.map(
       (visit) => resolvedJudges[visit.judgeId]
     ).filter((element) => element !== undefined),
@@ -80,12 +83,12 @@ export async function resolveProject(
     noShow: project.noShow,
   }));
 
-  return projects;
+  return projects.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export async function setProjects(
+export async function createProjects(
   _,
-  args: MutationSetProjectsArgs
+  args: MutationCreateProjectsArgs
 ): Promise<Project[]> {
   console.info(`Creating ${args.projects.length} projects`);
   let projectIds: string[] = [];
@@ -120,8 +123,6 @@ export async function setProjects(
           ).map((location) => location.locationNumber)
         );
 
-        locationNumber = firstUnassignedNumber;
-
         await tx.project.create({
           data: {
             id: projectId,
@@ -140,12 +141,20 @@ export async function setProjects(
         },
       });
 
+      // Create the categories if they don't exist
+      const fetchedCategories = await setCategories(null, {
+        categories: project.categories.map((category) => ({
+          name: category,
+          global: false,
+        })),
+      });
+
       await Promise.all(
-        project.categoryIds.map((categoryId) =>
+        fetchedCategories.map((category) =>
           tx.projectCategory.create({
             data: {
               projectId,
-              categoryId,
+              categoryId: category.id,
             },
           })
         )
@@ -166,7 +175,38 @@ export async function setProjects(
     null
   );
 
+  pubsub.publish("PROJECTS_UPDATED", { projects: resolvedProjects });
+
   return resolvedProjects;
+}
+
+export async function updateProject(
+  _,
+  args: MutationUpdateProjectArgs
+): Promise<Project> {
+  console.info(`Updating project ${args.id}`);
+
+  await prisma.project.update({
+    where: {
+      id: args.id,
+    },
+    data: {
+      name: args.project.name,
+      description: args.project.description,
+      url: args.project.url,
+      locationNumber: args.project.locationNumber,
+      noShow: args.project.noShow,
+    },
+  });
+
+  const resolvedProject = await resolveProject(
+    1,
+    { ids: [args.id] },
+    null,
+    null
+  );
+
+  return resolvedProject[0];
 }
 
 export async function clearProjects() {
