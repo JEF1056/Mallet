@@ -175,8 +175,6 @@ export async function createProjects(
     null
   );
 
-  pubsub.publish("PROJECTS_UPDATED", { projects: resolvedProjects });
-
   return resolvedProjects;
 }
 

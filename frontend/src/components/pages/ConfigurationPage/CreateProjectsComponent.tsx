@@ -233,7 +233,7 @@ export default function CreateProjectsComponent() {
           return {
             name: project[state.argToColumnName["Name"]!],
             url: project[state.argToColumnName["Url"]!],
-            // description: project[state.argToColumnName["Description"]!], // Descriptions are currently too large and are optional. If we implement batch uploading in ther future we can add this back.
+            description: project[state.argToColumnName["Description"]!], // Descriptions are currently too large and are optional. If we implement batch uploading in ther future we can add this back.
             categories: categories,
           };
         }),
@@ -336,9 +336,9 @@ export default function CreateProjectsComponent() {
 
         {/* Search bar */}
         {state.editingServerData && (
-          <Join className="flex-grow">
+          <Join className="grow">
             <Input
-              className="join-item flex-grow"
+              className="join-item grow"
               placeholder={"Search projects..."}
               value={searchInput}
               onChange={(event) => {
@@ -360,7 +360,7 @@ export default function CreateProjectsComponent() {
 
         {/* File input */}
         <FileInput
-          className={state.editingServerData ? "flex-shrink" : "flex-grow"}
+          className={state.editingServerData ? "flex-shrink" : "grow"}
           accept=".csv"
           onChange={(event) => {
             if (event.target.files && event.target.files.length > 0) {
@@ -597,7 +597,7 @@ export default function CreateProjectsComponent() {
             </Table>
           </div>
 
-          <div className="flex flex-grow justify-between flex-wrap gap-2">
+          <div className="flex grow justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge color="primary">
                 Project Count: {state.inputData.length}
@@ -747,11 +747,11 @@ export default function CreateProjectsComponent() {
           </Table>
 
           {isLoading && (
-            <Skeleton className="flex flex-grow flex-col w-full rounded-t-none" />
+            <Skeleton className="flex grow flex-col w-full rounded-t-none" />
           )}
 
           {searchInput && searchResults && searchResults.length == 0 && (
-            <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+            <div className="flex grow w-full justify-center items-center bg-base-300">
               No results found for "{searchInput}". Try a different search.
             </div>
           )}

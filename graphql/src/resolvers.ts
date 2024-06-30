@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { pubsub } from "./pubsub";
-import { createJudge, resolveJudge } from "./database/accessors/judge";
+import { createJudge, getNextProjectForJudge, resolveJudge } from "./database/accessors/judge";
 import { withFilter } from "graphql-subscriptions";
 import {
   clearProjects,
@@ -48,6 +48,7 @@ export const resolvers = {
     updateProject: updateProject,
 
     createJudge: createJudge,
+    getNextProjectForJudge: getNextProjectForJudge,
     setCategories: setCategories,
     deleteCategory: deleteCategory,
     setRating: setRating,
