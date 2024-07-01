@@ -40,6 +40,7 @@ type ScoredProject {
 type Judge {
   id: ID!
   profile: Profile!
+  lastProject: Project
   judgingProject: Project
   endingTimeAtLocation: Int
   assignedProjects: [Project!]!
@@ -98,8 +99,10 @@ type Mutation {
   ): Rating
 
   createJudge(profile: ProfileInput!): Judge
+  getNextProjectForJudge(id: ID!, skippedCurrent: Boolean): Project
 }
 
 type Subscription {
   uptime: Int
+  project(id: ID!): Project
 }

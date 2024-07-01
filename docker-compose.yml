@@ -59,7 +59,6 @@ services:
             - dist/
             - src/__generated__/
             - .env
-            - prisma/
         - action: rebuild
           path: ./graphql/package.json
         - action: rebuild
