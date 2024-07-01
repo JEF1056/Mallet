@@ -25,7 +25,11 @@ export async function resolveJudge(
         }
       : undefined,
     include: {
-      RatingRelationships: true,
+      RatingRelationships: {
+        include: {
+          rating: true,
+        },
+      },
       JudgeProjectAssignments: true,
       JudgeProjectVisits: {
         orderBy: [
@@ -65,12 +69,10 @@ export async function resolveJudge(
         visit.endTime === null &&
         visit.skipped === false
     );
-    const lastProject = judge.JudgeProjectVisits.find(
-      (visit) =>
-        visit.judgeId === judge.id &&
-        visit.endTime !== null &&
-        visit.skipped === false
-    );
+    // Find the most recent project the judge has rated
+    const lastProject = judge.RatingRelationships.sort(
+      (a, b) => b.rating.createdAt.getTime() - a.rating.createdAt.getTime()
+    )[0];
 
     // Compute the average time spent per project, if it wasn't skipped, in seconds
     const averageTimeSpentPerProject =

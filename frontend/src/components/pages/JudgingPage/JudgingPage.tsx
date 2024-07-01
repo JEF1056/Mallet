@@ -192,29 +192,84 @@ export default function JudgingPage() {
             </Button>
           </div>
         ) : (
-          <div className="flex flex-col md:min-w-96 md:grow">
-            <div className="flex grow gap-4 min-h-32">
+          <div className="flex flex-col md:min-w-96 min-h-72 md:min-h-fit md:grow gap-2 text-center">
+            <p className="items-center pb-2 md:pb-0">
+              Which project is better?
+            </p>
+            {data?.judge[0]?.lastProject ? (
+              <>
+                <Button
+                  onClick={() => {
+                    setRating({
+                      variables: {
+                        judgeId: judgeId,
+                        projectId: data?.judge[0]?.judgingProject.id,
+                        categoryId: "general",
+                        currentProjectIsBetter: true,
+                      },
+                    });
+                    getNextProjectForJudge({
+                      variables: {
+                        getNextProjectForJudgeId: judgeId,
+                        skippedCurrent: false,
+                      },
+                    });
+                  }}
+                  size="lg"
+                  className="grow-2"
+                  color="primary"
+                >
+                  {data?.judge[0]?.judgingProject?.name || "Current Project"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setRating({
+                      variables: {
+                        judgeId: judgeId,
+                        projectId: data?.judge[0]?.judgingProject.id,
+                        categoryId: "general",
+                        currentProjectIsBetter: false,
+                      },
+                    });
+                    getNextProjectForJudge({
+                      variables: {
+                        getNextProjectForJudgeId: judgeId,
+                        skippedCurrent: false,
+                      },
+                    });
+                  }}
+                  size="lg"
+                  className="grow-2"
+                  color="accent"
+                >
+                  {data?.judge[0]?.lastProject?.name || "Previous Project"}
+                </Button>
+              </>
+            ) : (
               <Button
-                onClick={() =>
+                onClick={() => {
                   setRating({
                     variables: {
                       judgeId: judgeId,
                       projectId: data?.judge[0]?.judgingProject.id,
-                      categoryId: "1",
-                      currentProjectIsBetter: true,
+                      categoryId: "general",
+                      currentProjectIsBetter: false,
                     },
-                  })
-                }
+                  });
+                  getNextProjectForJudge({
+                    variables: {
+                      getNextProjectForJudgeId: judgeId,
+                      skippedCurrent: false,
+                    },
+                  });
+                }}
                 size="lg"
-                className="grow h-full"
+                color="primary"
+                className="flex grow"
               >
-                {data?.judge[0]?.lastProject?.name || "Previous Project"}
+                Continue
               </Button>
-              <Button size="lg" className="grow h-full">
-                {data?.judge[0]?.judgingProject?.name || "Current Project"}
-              </Button>
-            </div>
-            <Divider />
+            )}
             <Button
               onClick={() =>
                 getNextProjectForJudge({
@@ -224,8 +279,7 @@ export default function JudgingPage() {
                   },
                 })
               }
-              size="lg"
-              className="grow min-h-24"
+              size="md"
             >
               Skip
             </Button>

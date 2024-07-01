@@ -322,19 +322,21 @@ export default function CreateCategoriesComponent() {
                       )}
                     </span>
                     <span>
-                      <Button
-                        size="sm"
-                        color="error"
-                        onClick={async () => {
-                          setDeleteModalCategoryInfo({
-                            id: category.id,
-                            name: category.name,
-                          });
-                          showConfirmModal();
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </Button>
+                      {category.id !== "general" && (
+                        <Button
+                          size="sm"
+                          color="error"
+                          onClick={async () => {
+                            setDeleteModalCategoryInfo({
+                              id: category.id,
+                              name: category.name,
+                            });
+                            showConfirmModal();
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </Button>
+                      )}
                     </span>
                   </Table.Row>
                 ))}
