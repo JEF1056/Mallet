@@ -8,7 +8,7 @@ import {
 } from "../../__generated__/resolvers-types";
 import { batchResolveUniqueAndMap } from "../helpers";
 import { resolveProject } from "./project";
-import { pubsub } from "../../pubsub";
+import { pubsub, PUBSUB_EVENTS } from "../../pubsub";
 import { GraphQLError } from "graphql";
 import { defaultConfig } from "../../config";
 
@@ -151,6 +151,8 @@ export async function getNextProjectForJudge(
   _,
   args: MutationGetNextProjectForJudgeArgs
 ) {
+  console.info("Getting next project for judge with args: ", args);
+
   const judge = await prisma.judge.findFirst({
     where: args.id
       ? {
@@ -165,6 +167,7 @@ export async function getNextProjectForJudge(
   });
 
   if (!judge) {
+    console.error("Judge not found: ", args.id);
     throw new GraphQLError("Judge not found.");
   }
 
@@ -184,8 +187,6 @@ export async function getNextProjectForJudge(
         (rating) => rating.projectId === project.projectId
       )
   )?.projectId;
-
-  console.log("nextJudgableProject", nextJudgableProject);
 
   // If all the judge's assigned projects are currently active, give them the project that's received the least judging
   if (!nextJudgableProject) {
@@ -243,6 +244,10 @@ export async function getNextProjectForJudge(
         projectId: nextJudgableProject,
       },
     });
+  });
+
+  pubsub.publish(PUBSUB_EVENTS.JUDGING_PROJECT_UPDATED, {
+    judge: (await resolveJudge(1, { ids: [judge.id] }, null, null))[0],
   });
 
   const project = await resolveProject(

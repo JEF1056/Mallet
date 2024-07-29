@@ -1,14 +1,46 @@
-import { Badge, Button, Card, Divider, Skeleton } from "react-daisyui";
+import { Badge, Button, Card, Collapse, Skeleton } from "react-daisyui";
 import NavBarComponent from "../../NavBarComponent";
 import { gql, useMutation, useQuery } from "@apollo/client";
 import { Category } from "../../../__generated__/resolvers-types";
 import { truncate } from "../../../helpers/csv";
+import { useEffect } from "react";
+import Markdown from "react-markdown";
 
 export default function JudgingPage() {
-  const judgeId = "a9acb70f-2a62-4727-8c93-85fff594b4f7";
+  const judgeId = "90b86504-af73-43bf-97b1-129acf0e6556";
 
   const getJudgeGql = gql`
     query Judge($ids: [ID!]) {
+      judge(ids: $ids) {
+        id
+        profile {
+          name
+        }
+        assignedProjects {
+          name
+          locationNumber
+        }
+        endingTimeAtLocation
+        lastProject {
+          name
+          description
+          id
+        }
+        judgingProject {
+          name
+          description
+          locationNumber
+          id
+          categories {
+            name
+          }
+        }
+      }
+    }
+  `;
+
+  const subscribeToJudgeGql = gql`
+    subscription Judge($ids: [ID!]) {
       judge(ids: $ids) {
         id
         profile {
@@ -101,7 +133,7 @@ export default function JudgingPage() {
     }
   `;
 
-  const { loading, error, data } = useQuery(getJudgeGql, {
+  const { subscribeToMore, loading, error, data } = useQuery(getJudgeGql, {
     notifyOnNetworkStatusChange: true,
     variables: {
       ids: [judgeId],
@@ -112,7 +144,6 @@ export default function JudgingPage() {
     if (!loading && error) {
       return (
         <>
-          {" "}
           <Card.Title className="h2" color="error">
             Couldn't fetch project.
           </Card.Title>
@@ -124,15 +155,23 @@ export default function JudgingPage() {
     if (data.judge[0]?.judgingProject) {
       return (
         <>
-          <div className="flex-grow gap-2">
+          <div className="flex-grow gap-2 flex-wrap">
             <Card.Title className="h2">
               {data.judge[0]?.judgingProject.name}
             </Card.Title>
-            <p>{data.judge[0]?.judgingProject.description}</p>
             <p className="text-bold">
-              {" "}
               Location: {data.judge[0]?.judgingProject.locationNumber}
             </p>
+            <Collapse className="bg-base-100 my-4" icon="arrow">
+              <Collapse.Title>Description</Collapse.Title>
+              <Collapse.Content className="overflow-auto max-h-64 md: max-h-128 no-scrollbar">
+                <article className="prose-sm lg:prose">
+                  <Markdown>
+                    {data.judge[0]?.judgingProject.description}
+                  </Markdown>
+                </article>
+              </Collapse.Content>
+            </Collapse>
           </div>
           <div className="max-w-256">
             {data.judge[0]?.judgingProject.categories.map(
@@ -157,6 +196,26 @@ export default function JudgingPage() {
     }
   }
 
+  useEffect(() => {
+    const unsubscribe = subscribeToMore({
+      document: subscribeToJudgeGql,
+      variables: { ids: [judgeId] },
+      updateQuery: (previous, { subscriptionData, variables }) => {
+        console.log("variables", variables);
+        console.log("subscriptionData", subscriptionData);
+        console.log("previous", previous);
+
+        if (!subscriptionData.data) {
+          return previous;
+        }
+
+        return { judge: [subscriptionData.data.judge] };
+      },
+    });
+
+    return unsubscribe;
+  }, [subscribeToMore]);
+
   const [getNextProjectForJudge] = useMutation(getNextProjectForJudgeGql);
   const [setRating] = useMutation(setRatingGql);
 
@@ -170,7 +229,9 @@ export default function JudgingPage() {
           ) : (
             <Card imageFull className="bg-base-100 h-full">
               {/* <Card.Image src="https://d112y698adiu2z.cloudfront.net/photos/production/software_photos/000/626/926/datas/gallery.jpg" /> */}
-              <Card.Body>{getShownProject()}</Card.Body>
+              <Card.Body className="min-w-0 p-6 lg:p-8">
+                {getShownProject()}
+              </Card.Body>
             </Card>
           )}
         </div>

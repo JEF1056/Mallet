@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "compile": "npm run generate-gql && tsc",
-    "start": "npm run migrate && npm run seed-db && npm run compile && node --experimental-specifier-resolution=node ./dist/index.js",
+    "start": "npm run migrate && npm run seed-db && npm run compile && node --experimental-specifier-resolution=node ./dist/src/index.js",
     "generate-gql": "graphql-codegen --config codegen.yml",
     "generate-db": "npx prisma migrate dev",
     "seed-db": "npx prisma db seed",
