@@ -2,6 +2,8 @@ import { gql, useQuery } from "@apollo/client";
 import { Badge, Divider, Skeleton } from "react-daisyui";
 import { useParams } from "react-router-dom";
 import NavBarComponent from "../../NavBarComponent";
+import Markdown from "react-markdown";
+import { Project } from "../../../__generated__/resolvers-types";
 
 const getProjectGql = gql`
   query GetProjects($ids: [ID!]) {
@@ -72,7 +74,7 @@ export default function ProjectDetailPage() {
     variables: { ids: [id] },
   });
 
-  const project = data?.project[0];
+  const project: Project = data?.project[0];
 
   console.log(loading, error, data);
 
@@ -101,7 +103,6 @@ export default function ProjectDetailPage() {
           ) : (
             <article className="prose prose-sm">
               <h1>{project.name}</h1>
-              {project.description && <p>{project.description}</p>}
             </article>
           )}
           <Divider horizontal className="invisible sm:visible" />
@@ -123,9 +124,19 @@ export default function ProjectDetailPage() {
             </>
           )}
         </div>
+        {project?.description && (
+          <Markdown className="prose prose-sm pt-4">
+            {project.description}
+          </Markdown>
+        )}
         <Divider />
         <article className="prose prose-sm">
           <h2>Assigned Judges</h2>
+          {project.assignedJudges.map((judge) => (
+            <p key={judge.id}>
+              <Badge color="ghost">{judge.profile.name}</Badge>
+            </p>
+          ))}
         </article>
       </div>
     </>

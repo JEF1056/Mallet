@@ -133,7 +133,7 @@ export default function JudgingPage() {
     }
   `;
 
-  const { subscribeToMore, loading, error, data } = useQuery(getJudgeGql, {
+  const { subscribeToMore, loading, error, data } = useQuery(getJudgeGql, { 
     notifyOnNetworkStatusChange: true,
     variables: {
       ids: [judgeId],
@@ -163,13 +163,14 @@ export default function JudgingPage() {
               Location: {data.judge[0]?.judgingProject.locationNumber}
             </p>
             <Collapse className="bg-base-100 my-4" icon="arrow">
-              <Collapse.Title>Description</Collapse.Title>
+              <Collapse.Title>
+                Description ({data.judge[0]?.judgingProject.description.length}{" "}
+                characters)
+              </Collapse.Title>
               <Collapse.Content className="overflow-auto max-h-64 md: max-h-128 no-scrollbar">
-                <article className="prose-sm lg:prose">
-                  <Markdown>
-                    {data.judge[0]?.judgingProject.description}
-                  </Markdown>
-                </article>
+                <Markdown className="prose-sm lg:prose">
+                  {data.judge[0]?.judgingProject.description}
+                </Markdown>
               </Collapse.Content>
             </Collapse>
           </div>
@@ -177,7 +178,7 @@ export default function JudgingPage() {
             {data.judge[0]?.judgingProject.categories.map(
               (category: Category) => (
                 <Badge key={category.name}>
-                  {truncate(category.name, 38, "...")}
+                  {truncate(category.name, 32, "...")}
                 </Badge>
               )
             )}

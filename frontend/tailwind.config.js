@@ -18,6 +18,13 @@ export default {
         1: "1",
         2: "2",
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: "100ch",
+          },
+        },
+      },
     },
   },
   daisyui: {

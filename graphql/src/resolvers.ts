@@ -13,6 +13,7 @@ import {
   resolveProjectRankingsForCategory,
   createProjects,
   updateProject,
+  resolveProjectCount,
 } from "./database/accessors/project";
 import {
   deleteCategory,
@@ -46,6 +47,7 @@ export const resolvers = {
     project: resolveProject,
     rating: resolveRating,
     rankedProjects: resolveProjectRankingsForCategory,
+    projectCount: resolveProjectCount,
   },
   Mutation: {
     createProjects: createProjects,
@@ -62,6 +64,9 @@ export const resolvers = {
   Subscription: {
     uptime: {
       subscribe: () => pubsub.asyncIterator(["NUMBER_INCREMENTED"]),
+    },
+    projectCount: {
+      subscribe: () => pubsub.asyncIterator([PUBSUB_EVENTS.PROJECT_UPDATED]),
     },
     judge: {
       subscribe: withFilter(

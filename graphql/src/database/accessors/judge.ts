@@ -88,8 +88,6 @@ export async function resolveJudge(
         }
       }, 0) / 1000;
 
-    console.log("averageTimeSpentPerProject", averageTimeSpentPerProject);
-
     return {
       id: judge.id,
       profile: {
