@@ -80,7 +80,7 @@ export default function ProjectDetailPage() {
     return (
       <>
         <NavBarComponent />
-        <div className="flex flex-col bg-neutral rounded-box p-8 w-full flex-grow gap-2 items-center justify-center">
+        <div className="flex flex-col bg-neutral rounded-box p-8 w-full grow gap-2 items-center justify-center">
           <article className="prose">
             <h1>Project Not Found</h1>
             <p>There was an error loading the project. Is the ID correct?</p>
@@ -94,7 +94,7 @@ export default function ProjectDetailPage() {
   return (
     <>
       <NavBarComponent />
-      <div className="flex flex-col bg-neutral rounded-box p-8 w-full flex-grow gap-2">
+      <div className="flex flex-col bg-neutral rounded-box p-8 w-full grow gap-2">
         <div className="flex flex-row flex-wrap items-center gap-2">
           {loading ? (
             <Skeleton className="w-96 h-14" />

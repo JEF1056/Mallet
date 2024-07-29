@@ -1,7 +1,11 @@
 import fs from "fs";
 import path from "path";
-import { pubsub } from "./pubsub";
-import { createJudge, resolveJudge } from "./database/accessors/judge";
+import { pubsub, PUBSUB_EVENTS } from "./pubsub";
+import {
+  createJudge,
+  getNextProjectForJudge,
+  resolveJudge,
+} from "./database/accessors/judge";
 import { withFilter } from "graphql-subscriptions";
 import {
   clearProjects,
@@ -48,6 +52,7 @@ export const resolvers = {
     updateProject: updateProject,
 
     createJudge: createJudge,
+    getNextProjectForJudge: getNextProjectForJudge,
     setCategories: setCategories,
     deleteCategory: deleteCategory,
     setRating: setRating,
@@ -58,11 +63,11 @@ export const resolvers = {
     uptime: {
       subscribe: () => pubsub.asyncIterator(["NUMBER_INCREMENTED"]),
     },
-    project: {
+    judge: {
       subscribe: withFilter(
-        () => pubsub.asyncIterator(["PROJECT_UPDATED"]),
+        () => pubsub.asyncIterator([PUBSUB_EVENTS.JUDGING_PROJECT_UPDATED]),
         (payload, variables) => {
-          return payload.projectUpdated.id === variables.id;
+          return variables.ids.includes(payload.judge.id);
         }
       ),
     },
