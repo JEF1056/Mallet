@@ -2,6 +2,8 @@ import { gql, useQuery } from "@apollo/client";
 import { Badge, Divider, Skeleton } from "react-daisyui";
 import { useParams } from "react-router-dom";
 import NavBarComponent from "../../NavBarComponent";
+import Markdown from "react-markdown";
+import { Project } from "../../../__generated__/resolvers-types";
 
 const getProjectGql = gql`
   query GetProjects($ids: [ID!]) {
@@ -72,7 +74,7 @@ export default function ProjectDetailPage() {
     variables: { ids: [id] },
   });
 
-  const project = data?.project[0];
+  const project: Project = data?.project[0];
 
   console.log(loading, error, data);
 
@@ -80,7 +82,7 @@ export default function ProjectDetailPage() {
     return (
       <>
         <NavBarComponent />
-        <div className="flex flex-col bg-neutral rounded-box p-8 w-full flex-grow gap-2 items-center justify-center">
+        <div className="flex flex-col bg-neutral rounded-box p-8 w-full grow gap-2 items-center justify-center">
           <article className="prose">
             <h1>Project Not Found</h1>
             <p>There was an error loading the project. Is the ID correct?</p>
@@ -94,14 +96,13 @@ export default function ProjectDetailPage() {
   return (
     <>
       <NavBarComponent />
-      <div className="flex flex-col bg-neutral rounded-box p-8 w-full flex-grow gap-2">
+      <div className="flex flex-col bg-neutral rounded-box p-8 w-full grow gap-2">
         <div className="flex flex-row flex-wrap items-center gap-2">
           {loading ? (
             <Skeleton className="w-96 h-14" />
           ) : (
             <article className="prose prose-sm">
               <h1>{project.name}</h1>
-              {project.description && <p>{project.description}</p>}
             </article>
           )}
           <Divider horizontal className="invisible sm:visible" />
@@ -123,9 +124,19 @@ export default function ProjectDetailPage() {
             </>
           )}
         </div>
+        {project?.description && (
+          <Markdown className="prose prose-sm pt-4">
+            {project.description}
+          </Markdown>
+        )}
         <Divider />
         <article className="prose prose-sm">
           <h2>Assigned Judges</h2>
+          {project.assignedJudges.map((judge) => (
+            <p key={judge.id}>
+              <Badge color="ghost">{judge.profile.name}</Badge>
+            </p>
+          ))}
         </article>
       </div>
     </>

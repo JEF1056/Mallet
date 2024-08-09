@@ -176,9 +176,9 @@ export default function CreateCategoriesComponent() {
         </label>
 
         {/* Search bar */}
-        <Join className="flex-grow">
+        <Join className="grow">
           <Input
-            className="join-item flex-grow"
+            className="join-item grow"
             placeholder={"Search categories..."}
             value={searchInput}
             onChange={(event) => {
@@ -198,9 +198,9 @@ export default function CreateCategoriesComponent() {
         </Join>
 
         {/* Create category input section */}
-        <Join className="flex-grow">
+        <Join className="grow">
           <Input
-            className="join-item flex-grow"
+            className="join-item grow"
             placeholder="New global category..."
             value={newCategoryInput}
             onChange={(event) => setNewCategoryInput(event.currentTarget.value)}
@@ -322,19 +322,21 @@ export default function CreateCategoriesComponent() {
                       )}
                     </span>
                     <span>
-                      <Button
-                        size="sm"
-                        color="error"
-                        onClick={async () => {
-                          setDeleteModalCategoryInfo({
-                            id: category.id,
-                            name: category.name,
-                          });
-                          showConfirmModal();
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </Button>
+                      {category.id !== "general" && (
+                        <Button
+                          size="sm"
+                          color="error"
+                          onClick={async () => {
+                            setDeleteModalCategoryInfo({
+                              id: category.id,
+                              name: category.name,
+                            });
+                            showConfirmModal();
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faTrash} />
+                        </Button>
+                      )}
                     </span>
                   </Table.Row>
                 ))}
@@ -345,21 +347,21 @@ export default function CreateCategoriesComponent() {
             {searchInput != "" &&
               (searchResults == null || searchResults.length == 0) &&
               state.serverSideCategories.length != 0 && (
-                <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+                <div className="flex grow w-full justify-center items-center bg-base-300">
                   No results found for "{searchInput}". Try a different search.
                 </div>
               )}
 
             {/* Handle loading state */}
             {state.serverSideCategories.length == 0 && loading && (
-              <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+              <div className="flex grow w-full justify-center items-center bg-base-300">
                 Loading...
               </div>
             )}
 
             {/* Handle empty state */}
             {state.serverSideCategories.length == 0 && !loading && (
-              <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+              <div className="flex grow w-full justify-center items-center bg-base-300">
                 No categories found. Add some!
               </div>
             )}
@@ -421,7 +423,7 @@ export default function CreateCategoriesComponent() {
 
             {/* Handle empty state */}
             {state.localCategories.length == 0 && (
-              <div className="flex flex-grow w-full justify-center items-center bg-base-300">
+              <div className="flex grow w-full justify-center items-center bg-base-300">
                 No unsaved categores. Add some!
               </div>
             )}
@@ -430,7 +432,7 @@ export default function CreateCategoriesComponent() {
       </div>
 
       {/* Footer area */}
-      <div className="flex flex-grow justify-between">
+      <div className="flex grow justify-between">
         <div className="flex items-center gap-2">
           <Badge color="primary">
             Category Count (Saved): {state.serverSideCategories.length}

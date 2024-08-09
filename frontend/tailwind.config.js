@@ -10,6 +10,20 @@ export default {
     extend: {
       spacing: {
         128: "32rem",
+        144: "36rem",
+        160: "40rem",
+        256: "64rem",
+      },
+      flexGrow: {
+        1: "1",
+        2: "2",
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            maxWidth: "100ch",
+          },
+        },
       },
     },
   },

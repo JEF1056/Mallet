@@ -5,126 +5,128 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Category {
-    id                  String                @id @default(uuid())
-    name                String                @unique
-    description         String?
-    global              Boolean               @default(false)
-    ProjectCategory     ProjectCategory[]
-    RatingRelationships RatingRelationships[]
+  id                  String                @id @default(uuid())
+  name                String                @unique
+  description         String?
+  global              Boolean               @default(false)
+  ProjectCategory     ProjectCategory[]
+  RatingRelationships RatingRelationships[]
 }
 
 model Project {
-    id                      String                    @id @default(uuid())
-    name                    String
-    description             String?
-    url                     String                    @unique
-    locationNumber          Int                       @unique
-    noShow                  Boolean                   @default(false)
-    RatingRelationships     RatingRelationships[]
-    ProjectCategory         ProjectCategory[]
-    WorseRating             WorseRating[]
-    BetterRating            BetterRating[]
-    JudgeProjectAssignments JudgeProjectAssignments[]
-    JudgeProjectVisits      JudgeProjectVisits[]
+  id                      String                    @id @default(uuid())
+  name                    String
+  description             String?
+  url                     String                    @unique
+  locationNumber          Int                       @unique
+  noShow                  Boolean                   @default(false)
+  RatingRelationships     RatingRelationships[]
+  ProjectCategory         ProjectCategory[]
+  WorseRating             WorseRating[]
+  BetterRating            BetterRating[]
+  JudgeProjectAssignments JudgeProjectAssignments[]
+  JudgeProjectVisits      JudgeProjectVisits[]
 }
 
 model ProjectCategory {
-    project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-    projectId  String
-    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-    categoryId String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
 
-    @@id([projectId, categoryId])
+  @@id([projectId, categoryId])
 }
 
 model Judge {
-    id                      String                    @id @default(uuid())
-    name                    String
-    description             String?
-    profilePictureUrl       String?
-    RatingRelationships     RatingRelationships[]
-    JudgeProjectAssignments JudgeProjectAssignments[]
-    JudgeProjectVisits      JudgeProjectVisits[]
-    auth                    auth[]
+  id                      String                    @id @default(uuid())
+  name                    String
+  description             String?
+  profilePictureUrl       String?
+  RatingRelationships     RatingRelationships[]
+  JudgeProjectAssignments JudgeProjectAssignments[]
+  JudgeProjectVisits      JudgeProjectVisits[]
+  auth                    auth[]
 }
 
 model JudgeProjectAssignments {
-    judge     Judge   @relation(fields: [judgeId], references: [id], onDelete: Cascade)
-    judgeId   String
-    project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-    projectId String
+  judge     Judge   @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  judgeId   String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
 
-    @@id([judgeId, projectId])
+  @@id([judgeId, projectId])
 }
 
 model JudgeProjectVisits {
-    startTime DateTime  @default(now())
-    endTime   DateTime?
-    judge     Judge     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
-    judgeId   String
-    project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-    projectId String
+  id        String    @default(uuid())
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+  skipped   Boolean   @default(false)
+  judge     Judge     @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  judgeId   String
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
 
-    @@id([judgeId, projectId])
+  @@id([judgeId, projectId, id])
 }
 
 model Rating {
-    id        String   @id @default(uuid())
-    createdAt DateTime @default(now())
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
 
-    RatingRelationships RatingRelationships[]
-    WorseRating         WorseRating[]
-    BetterRating        BetterRating[]
+  RatingRelationships RatingRelationships[]
+  WorseRating         WorseRating[]
+  BetterRating        BetterRating[]
 }
 
 model RatingRelationships {
-    rating     Rating   @relation(fields: [ratingId], references: [id], onDelete: Cascade)
-    ratingId   String
-    judge      Judge    @relation(fields: [judgeId], references: [id], onDelete: Cascade)
-    judgeId    String
-    category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-    categoryId String
-    Project    Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-    projectId  String?
+  rating     Rating   @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+  ratingId   String
+  judge      Judge    @relation(fields: [judgeId], references: [id], onDelete: Cascade)
+  judgeId    String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  Project    Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  String?
 
-    @@id([ratingId, judgeId, categoryId])
+  @@id([ratingId, judgeId, categoryId])
 }
 
 model WorseRating {
-    rating         Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade)
-    ratingId       String
-    projects       Project @relation(fields: [worseProjectId], references: [id], onDelete: Cascade)
-    worseProjectId String
+  rating         Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+  ratingId       String
+  projects       Project @relation(fields: [worseProjectId], references: [id], onDelete: Cascade)
+  worseProjectId String
 
-    @@id([ratingId])
+  @@id([ratingId])
 }
 
 model BetterRating {
-    rating          Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade)
-    ratingId        String
-    projects        Project @relation(fields: [betterProjectId], references: [id], onDelete: Cascade)
-    betterProjectId String
+  rating          Rating  @relation(fields: [ratingId], references: [id], onDelete: Cascade)
+  ratingId        String
+  projects        Project @relation(fields: [betterProjectId], references: [id], onDelete: Cascade)
+  betterProjectId String
 
-    @@id([ratingId])
+  @@id([ratingId])
 }
 
 model auth {
-    id                 String    @id @default(uuid())
-    createdAt          DateTime  @default(now())
-    updatedAt          DateTime  @updatedAt
-    accessToken        String?
-    refreshToken       String?
-    accessTokenExpires DateTime?
-    authLevel          String
-    userId             String
-    user               Judge?    @relation(fields: [userId], references: [id])
+  id                 String    @id @default(uuid())
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  accessToken        String?
+  refreshToken       String?
+  accessTokenExpires DateTime?
+  authLevel          String
+  userId             String
+  user               Judge?    @relation(fields: [userId], references: [id])
 }

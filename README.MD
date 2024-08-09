@@ -8,7 +8,7 @@ We reccomend using Docker and docker-compose
 
 ### Development
 
-Set up with the following commands:
+Set up types locally with the following commands:
 
 ```
 cd graphql
@@ -33,3 +33,5 @@ docker-compose -f docker-compose.prod.yml up --build -d
 ```
 
 Boom! You're done! Mallet is running in production mode on `localhost:3000`
+
+Alternatively, [Coolify support coming soon](https://coolify.io/docs/introduction)

@@ -15,7 +15,7 @@ import {
   findFirstNonContinuousNumber,
 } from "../helpers";
 import { resolveJudge } from "./judge";
-import { pubsub } from "../../pubsub";
+import { pubsub, PUBSUB_EVENTS } from "../../pubsub";
 
 export async function resolveProject(
   depth: number | undefined,
@@ -175,7 +175,9 @@ export async function createProjects(
     null
   );
 
-  pubsub.publish("PROJECTS_UPDATED", { projects: resolvedProjects });
+  pubsub.publish(PUBSUB_EVENTS.PROJECT_UPDATED, {
+    projectCount: await resolveProjectCount(),
+  });
 
   return resolvedProjects;
 }
@@ -206,6 +208,10 @@ export async function updateProject(
     null
   );
 
+  pubsub.publish(PUBSUB_EVENTS.PROJECT_UPDATED, {
+    projectCount: await resolveProjectCount(),
+  });
+
   return resolvedProject[0];
 }
 
@@ -214,6 +220,10 @@ export async function clearProjects() {
   await prisma.projectCategory.deleteMany({});
   const deleteCount = (await prisma.project.deleteMany({})).count;
   console.info(`Deleted ${deleteCount} projects`);
+
+  pubsub.publish(PUBSUB_EVENTS.PROJECT_UPDATED, {
+    projectCount: await resolveProjectCount(),
+  });
 
   return deleteCount;
 }
@@ -256,6 +266,10 @@ export async function resolveProjectRankingsForCategory(
     project: resolvedProjects[project.projectId],
     score: project.score,
   }));
+}
+
+export async function resolveProjectCount(): Promise<number> {
+  return await prisma.project.count();
 }
 
 function rankProjects(

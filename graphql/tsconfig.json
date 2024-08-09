@@ -13,6 +13,10 @@
         "esModuleInterop": true,
         "types": [
             "node"
-        ]
+        ],
+    },
+    "ts-node": {
+        // Tell ts-node CLI to install the --loader automatically
+        "esm": true
     }
 }
